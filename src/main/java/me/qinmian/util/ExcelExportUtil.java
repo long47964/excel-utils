@@ -48,6 +48,11 @@ import me.qinmian.bean.StaticExcelRowCellInfo;
 import me.qinmian.emun.DataType;
 import me.qinmian.emun.ExcelFileType;
 
+/**
+ *  pojo+注解 导出excel工具
+ * @author woshi07948@163.com
+ *
+ */
 public class ExcelExportUtil {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(ExcelExportUtil.class);
@@ -152,35 +157,78 @@ public class ExcelExportUtil {
 		}
 	}
 	
-	public static <T> Workbook exportXlsxExcel(Class<T> clazz, List<T> list) throws IntrospectionException, IllegalAccessException, IllegalArgumentException, InvocationTargetException{
+	/**
+	 * @param clazz 要导出的类
+	 * @param list 导出的数据
+	 * @param quickMode 导出xlsx时是否开启快速模式，即使用SXSSFWorkbook类进行导出，快速模式会产生临时文件，
+	 * 需要手动删除，默认为false 
+	 * @return
+	 */
+	public static <T> Workbook exportExcel07(Class<T> clazz, List<T> list,boolean quickModel) {
+		return exportExcel(clazz, list, ExcelFileType.XLSX, null ,null ,true);
+	}
+	
+	/**
+	 * @param clazz 要导出的类
+	 * @param list 导出的数据
+	 * @return
+	 */
+	public static <T> Workbook exportExcel07(Class<T> clazz, List<T> list) {
 		return exportExcel(clazz, list, ExcelFileType.XLSX, null);
 	}
 	
-	public static <T> Workbook exportXlsExcel(Class<T> clazz, List<T> list) throws IntrospectionException, IllegalAccessException, IllegalArgumentException, InvocationTargetException{
+	
+	/**
+	 * @param clazz 要导出的类
+	 * @param list 导出的数据
+	 * @param staticRowData 静态行数据
+	 * @param workbook 工作簿，分批写入时需要传入
+	 * @return
+	 */
+	public static <T> Workbook exportExcel03(Class<T> clazz, List<T> list, Map<String,String> staticRowData , Workbook workbook){
+		return exportExcel(clazz, list, ExcelFileType.XLS, staticRowData, workbook, false);
+	}
+	
+	/**
+	 * @param clazz 要导出的类
+	 * @param list 导出的数据
+	 * @param staticRowData 静态行数据
+	 * @return
+	 */
+	public static <T> Workbook exportExcel03(Class<T> clazz, List<T> list, Map<String,String> staticRowData ){
+		return exportExcel(clazz, list, ExcelFileType.XLS, staticRowData);
+	}
+	
+	/**
+	 * @param clazz 要导出的类
+	 * @param list 导出的数据
+	 * @return
+	 */
+	public static <T> Workbook exportExcel03(Class<T> clazz, List<T> list){
 		return exportExcel(clazz, list, ExcelFileType.XLS, null);
 	}
 	
-	public static <T> Workbook exportExcel(Class<T> clazz, List<T> list ,ExcelFileType type) throws IntrospectionException, IllegalAccessException, IllegalArgumentException, InvocationTargetException{
+	
+	
+	public static <T> Workbook exportExcel(Class<T> clazz, List<T> list ,ExcelFileType type) {
 		return exportExcel(clazz, list, type, null);
 	}
 	
-	public static <T> Workbook exportExcel(Class<T> clazz, List<T> list , ExcelFileType type,Map<String,String> staticRowData ) throws IntrospectionException, IllegalAccessException, IllegalArgumentException, InvocationTargetException{	
+	public static <T> Workbook exportExcel(Class<T> clazz, List<T> list , ExcelFileType type,Map<String,String> staticRowData ){	
 		return exportExcel(clazz, list, type, staticRowData, null,false);
 	}
 	
-/*	public static <T> InputStream exportExcelForStrem(Class<T> clazz, List<T> list , ExcelFileType type,Map<String,String> staticRowData ,boolean xlsxQuickMode) throws IntrospectionException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, IOException{	
-		Workbook workbook = exportExcel(clazz, list, type, staticRowData, null, xlsxQuickMode);
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		workbook.write(outputStream);
-		ByteArrayInputStream in = new ByteArrayInputStream(outputStream.toByteArray());
-		if(SXSSFWorkbook.class.equals(workbook.getClass())){
-			SXSSFWorkbook wb = (SXSSFWorkbook)workbook;
-			wb.dispose();
-		}
-		return in;
-	}*/
-	
-	public static <T> Workbook exportExcel(Class<T> clazz, List<T> list , ExcelFileType type,Map<String,String> staticRowData , Workbook workbook,boolean xlsxQuickMode) throws IntrospectionException, IllegalAccessException, IllegalArgumentException, InvocationTargetException{	
+	/**
+	 * @param clazz 要导出的类
+	 * @param list 导出的数据
+	 * @param type 导出表格类型
+	 * @param staticRowData 静态行数据
+	 * @param workbook 工作簿，分批写入时需要传入
+	 * @param xlsxQuickMode 导出xlsx时是否开启快速模式，即使用SXSSFWorkbook类进行导出，快速模式会产生临时文件，
+	 * 需要手动删除，默认为false 
+	 * @return 工作簿
+	 */
+	public static <T> Workbook exportExcel(Class<T> clazz, List<T> list , ExcelFileType type,Map<String,String> staticRowData , Workbook workbook,boolean xlsxQuickMode) {	
 		if(clazz == null){
 			return null;
 		}
@@ -189,7 +237,11 @@ public class ExcelExportUtil {
 		}
 		ExportInfo exportInfo = infoMap.get(clazz) ;
 		if(exportInfo == null ){	
-			exportInfo = initInfoForTargetClass(clazz);
+			try {
+				exportInfo = initInfoForTargetClass(clazz);
+			} catch (IntrospectionException e) {
+				throw new RuntimeException(e);
+			}
 		}
 		
 		int maxSheetSize = exportInfo.getMaxSheetSize(); 
@@ -250,8 +302,12 @@ public class ExcelExportUtil {
 				//创建表头
 				createSheetHeadRow(exportInfo, headCellStyleMap, sheet);
 			}
-			createSheetDataRow(list, startRow, usedListNum , usedListNum + dataSize ,
-					exportInfo,dataCellStyleMap,availableFields, sheet);	
+			try {
+				createSheetDataRow(list, startRow, usedListNum , usedListNum + dataSize ,
+						exportInfo,dataCellStyleMap,availableFields, sheet);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}	
 			setColumWidth(type, exportInfo,availableFields, sheet);			
 			usedListNum += dataSize;
 		}
