@@ -49,24 +49,24 @@ public class Test {
 		Workbook workbook = null;
 		long start = System.currentTimeMillis();
 		workbook = ExcelExportUtil.exportExcel(UserPlus.class,list,ExcelFileType.XLS,map,null,false);
-		list = getData(1798);
-		workbook = ExcelExportUtil.exportExcel(UserPlus.class,list,ExcelFileType.XLS,map,workbook,false);
+//		list = getData(1798);
+//		workbook = ExcelExportUtil.exportExcel(UserPlus.class,list,ExcelFileType.XLS,map,workbook,false);
 		long end = System.currentTimeMillis();
 		
 		System.out.println("耗时：" + (end-start) + "毫秒");		
 		workbook.write(outputStream);
-		/*list.clear();
+		list.clear();
 		
 		list = getData(544);
 		long start1 = System.currentTimeMillis();
-		workbook = ExcelExportUtil.exportExcel(UserPlus.class,list, ExcelFileType.XLSX,map,null,false);
+		workbook = ExcelExportUtil.exportExcel(UserPlus.class,list, ExcelFileType.XLS,map,null,false);
 		long end1 = System.currentTimeMillis();
 		System.out.println("耗时：" + (end1-start1) + "毫秒");		
-		FileOutputStream out = new FileOutputStream("D:/test/test/test33.xlsx");
+		FileOutputStream out = new FileOutputStream("D:/test/test/test33.xls");
 		workbook.write(out);
 		
 		out.flush();
-		out.close();*/
+		out.close();
 		
 		if(SXSSFWorkbook.class.equals(workbook.getClass())){
 			SXSSFWorkbook wb = (SXSSFWorkbook)workbook;

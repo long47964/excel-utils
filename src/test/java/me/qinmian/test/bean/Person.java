@@ -13,8 +13,7 @@ import me.qinmian.annotation.ExportFontStyle;
 import me.qinmian.annotation.ExportStyle;
 import me.qinmian.annotation.StaticExcelRow;
 
-@StaticExcelRow(cells={@ExcelRowCell(startRow=0,startCol=0,endRow=0,endCol=8,value="人类表"
-					,cellStyle=@ExportCellStyle(verticalAlignment=CellStyle.VERTICAL_CENTER,alignment=CellStyle.ALIGN_CENTER))})
+@StaticExcelRow(cells={@ExcelRowCell(startRow=0,autoCol=true,value="人类表")})
 @ExportStyle( headStyle=@ExportCellStyle(alignment=CellStyle.ALIGN_CENTER,verticalAlignment=CellStyle.VERTICAL_CENTER,fontStyle=@ExportFontStyle(color=HSSFColor.DARK_BLUE.index)))
 @Excel(headRow=1,dataRow=2)
 public class Person {
@@ -40,7 +39,7 @@ public class Person {
 	@ExcelField(headName="体重")
 	private Integer weight;
 	
-	@ExcelField(headName="登陆时间")
+	@ExcelField(headName="登陆时间",dataFormat="yyyy年m月d日",width=15)
 	private Date loginDate;
 	
 	@ExcelField(headName="电话")

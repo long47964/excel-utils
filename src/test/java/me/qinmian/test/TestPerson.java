@@ -17,7 +17,7 @@ import me.qinmian.util.ExcelExportUtil;
 public class TestPerson {
 
 	public static void main(String[] args) throws Exception {
-
+			
 		exportExcel();
 	}
 
@@ -27,7 +27,8 @@ public class TestPerson {
 		List<Person> list = getData();
 		Workbook workbook = null;
 		long start = System.currentTimeMillis();
-		workbook = ExcelExportUtil.exportExcel(Person.class,list,ExcelFileType.XLS,null,null,true);
+		workbook = ExcelExportUtil.exportExcel03(Person.class, list);
+//		workbook = ExcelExportUtil.exportExcel(Person.class,list,ExcelFileType.XLS,null,null,true);
 //		list = getData();
 //		workbook = ExcelExportUtil.exportExcel(UserPlus.class,list,ExcelFileType.XLSX,map,workbook,true);
 		long end = System.currentTimeMillis();
@@ -35,7 +36,9 @@ public class TestPerson {
 		System.out.println("耗时：" + (end-start) + "毫秒");		
 		System.out.println("****************************");
 		workbook.write(outputStream);
-		list.clear();
+		
+		
+		/*list.clear();
 		
 		list = getData();
 		long start1 = System.currentTimeMillis();
@@ -47,7 +50,7 @@ public class TestPerson {
 		workbook.write(out);
 		
 		out.flush();
-		out.close();
+		out.close();*/
 		
 		if(SXSSFWorkbook.class.equals(workbook.getClass())){
 			SXSSFWorkbook wb = (SXSSFWorkbook)workbook;

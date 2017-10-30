@@ -1,11 +1,14 @@
 package me.qinmian.test.bean;
 
+import me.qinmian.annotation.ExcelField;
 import me.qinmian.annotation.IgnoreField;
 
 public class Role {
 	
+	@ExcelField(headName="角色名称")
 	private String roleName;
 	
+	@ExcelField(headName="角色描述")
 	private String roleDesc;
 
 	@IgnoreField

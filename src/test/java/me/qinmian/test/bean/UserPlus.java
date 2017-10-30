@@ -11,6 +11,7 @@ public class UserPlus extends User{
 
 	private String firstName;
 	
+	@ExcelField(headName="角色")
 	private Role role;
 	
 	public Role getRole() {
