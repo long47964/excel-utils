@@ -41,7 +41,9 @@ public class Person {
     ...省略get，set....
 }
 ```
-
+|Author|果冻虾仁|
+|---|---
+|E-mail|Jelly.K.Wang@qq.com
 ****
 其中：@Excel代表是一个需要导出导入excel的类，可以设置的属性如下：
 |属性 | 含义|
