@@ -42,22 +42,22 @@ public class Person {
 }
 ```
 
-
+****
 其中：@Excel代表是一个需要导出导入excel的类，可以设置的属性如下：
-属性 | 含义
------|------
-headRow | 表头所在的行，从0开始，默认为0
-dataRow | 数据行开始的行数，从0开始，默认为1
-sheetSize | 每个sheet显示最大的行数，包括表头和数据以及静态行
-sheetName | sheet显示的名字，实际名字为该(属性i),i表示第几个sheet
+|属性 | 含义|
+|----|----|
+|headRow|表头所在的行，从0开始，默认为0|
+|dataRow|数据行开始的行数，从0开始，默认为1|
+|sheetSize|每个sheet显示最大的行数，包括表头和数据以及静态行|
+|sheetName|sheet显示的名字，实际名字为该(属性i),i表示第几个sheet|
 
 @ExportStyle表示导出表格的样式，其中可设置的属性如下，值得注意的是该注解可以写在类上和字段之上，类上代表全局的，字段上代表特有的，若字段为pojo类型，该pojo之中得到属性的样式的全局样式即该字段上的样式
-属性 | 含义
------|------
-headStyle | 表头的样式，为注解类型
-dataStyle | 数据行的样式，为注解类型
-dataEqHead | boolean类型，是否数据行的样式与表头一致，默认为false
-dataHightInPoint | 数据行的的高度，单位为字号
-headHightInPoint | 表头行的高度，单位为字号
+属性|含义
+|----|----|
+|headStyle|表头的样式，为注解类型|
+|dataStyle|数据行的样式，为注解类型|
+|dataEqHead|boolean类型，是否数据行的样式与表头一致，默认为false|
+|dataHightInPoint|数据行的的高度，单位为字号|
+|headHightInPoint|表头行的高度，单位为字号|
 
 
