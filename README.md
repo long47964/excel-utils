@@ -5,7 +5,7 @@ pojo的目前支持的类型为基本数据类型及其包装类型，pojo可以
 
 ##pojo的定义如下
 
-```java(type)
+```Java
 @StaticExcelRow(cells={@ExcelRowCell(startRow=0,autoCol=true,value="人类表")})
 @ExportStyle( headStyle=@ExportCellStyle(alignment=CellStyle.ALIGN_CENTER,verticalAlignment=CellStyle.VERTICAL_CENTER,fontStyle=@ExportFontStyle(color=HSSFColor.DARK_BLUE.index)))
 @Excel(headRow=1,dataRow=2)
