@@ -10,7 +10,6 @@ import java.util.List;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
-import me.qinmian.emun.ExcelFileType;
 import me.qinmian.test.bean.Person;
 import me.qinmian.util.ExcelExportUtil;
 

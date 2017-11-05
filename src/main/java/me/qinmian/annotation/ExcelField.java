@@ -17,7 +17,7 @@ public @interface ExcelField {
 	
 	String dataFormat() default "";
 	
-	String dateFormat() default "ss";
+	String dateFormat() default "";
 	
 	DataType dataType() default DataType.None;
 	

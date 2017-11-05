@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -24,7 +25,56 @@ import me.qinmian.util.ImportResult;
 public class Test {
 
 	public static void main(String[] args) throws Exception {
-		exportExcel();
+		separateSheet();
+		batchesExport();
+//		exportExcel();
+	}
+	
+	
+	
+
+	/**
+	 * 分批写出20w条数据
+	 * 
+	 * @throws IOException 
+	 */
+	private static void batchesExport() throws IOException {
+		Map<String, String> map = new HashMap<String,String>();
+		map.put("msg", "用户信息导出报表");
+		map.put("status", "导出成功");
+		
+		Workbook workbook = null;
+		//分两次写入20w条数据
+		List<UserPlus> list;
+		for(int i = 0 ; i < 2 ; i++){
+			list = getData(i*100000);
+			workbook = ExcelExportUtil.exportExcel03(UserPlus.class, list, map,workbook);
+			
+		}
+		FileOutputStream outputStream = new FileOutputStream("D:/test/user1.xls");
+		workbook.write(outputStream);
+		outputStream.flush();
+		outputStream.close();
+	}
+
+
+
+
+	/**@throws IOException 
+	 * @Excel(headRow=2,dataRow=5,sheetName="用户统计表",sheetSize=65536)
+	 * 分sheet测试  
+	 */
+	private static void separateSheet() throws IOException {
+		//获取10w条数据
+		List<UserPlus> list = getData(0);
+		Map<String, String> map = new HashMap<String,String>();
+		map.put("msg", "用户信息导出报表");
+		map.put("status", "导出成功");
+		Workbook workbook = ExcelExportUtil.exportExcel03(UserPlus.class, list, map);
+		FileOutputStream outputStream = new FileOutputStream("D:/test/user.xls");
+		workbook.write(outputStream);
+		outputStream.flush();
+		outputStream.close();
 	}
 
 	@SuppressWarnings("unused")
@@ -77,9 +127,13 @@ public class Test {
 		
 	}
 
+	/** 产生10w条数据
+	 * @param start
+	 * @return
+	 */
 	private static List<UserPlus> getData(int start) {
 		List<UserPlus> list = new ArrayList<UserPlus>();
-		for(int i = start ; i < 50000 + start ; i++){
+		for(int i = start ; i < 100000 + start ; i++){
 			UserPlus user = new UserPlus();
 			user.setAddress("深圳"+i);
 			user.setEmail("111qq"+ i + "@qq.com");
