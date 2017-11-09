@@ -5,16 +5,19 @@ import java.util.Date;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.CellStyle;
 
+import me.qinmian.annotation.DataStyle;
 import me.qinmian.annotation.Excel;
 import me.qinmian.annotation.ExcelField;
 import me.qinmian.annotation.ExcelRowCell;
 import me.qinmian.annotation.ExportCellStyle;
 import me.qinmian.annotation.ExportFontStyle;
-import me.qinmian.annotation.ExportStyle;
+import me.qinmian.annotation.HeadStyle;
 import me.qinmian.annotation.StaticExcelRow;
 
 @StaticExcelRow(cells={@ExcelRowCell(startRow=0,autoCol=true,value="人类表")})
-@ExportStyle( headStyle=@ExportCellStyle(alignment=CellStyle.ALIGN_CENTER,verticalAlignment=CellStyle.VERTICAL_CENTER,fontStyle=@ExportFontStyle(color=HSSFColor.DARK_BLUE.index)))
+//@ExportStyle( headStyle=@ExportCellStyle(alignment=CellStyle.ALIGN_CENTER,verticalAlignment=CellStyle.VERTICAL_CENTER,fontStyle=@ExportFontStyle(color=HSSFColor.DARK_BLUE.index)))
+@HeadStyle(@ExportCellStyle(alignment=CellStyle.ALIGN_CENTER,verticalAlignment=CellStyle.VERTICAL_CENTER,fontStyle=@ExportFontStyle(color=HSSFColor.DARK_BLUE.index)))
+@DataStyle
 @Excel(headRow=1,dataRow=2)
 public class Person {
 

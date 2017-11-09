@@ -1,7 +1,6 @@
 package me.qinmian.test;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -13,32 +12,22 @@ import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.junit.Test;
 
 import me.qinmian.emun.ExcelFileType;
 import me.qinmian.test.bean.Role;
-import me.qinmian.test.bean.User;
 import me.qinmian.test.bean.UserPlus;
 import me.qinmian.util.ExcelExportUtil;
-import me.qinmian.util.ExcelImportUtil;
-import me.qinmian.util.ImportResult;
 
-public class Test {
-
-	public static void main(String[] args) throws Exception {
-		separateSheet();
-		batchesExport();
-//		exportExcel();
-	}
-	
-	
-	
+public class TestUser {
 
 	/**
 	 * 分批写出20w条数据
 	 * 
 	 * @throws IOException 
 	 */
-	private static void batchesExport() throws IOException {
+	@Test
+	public void batchesExport() throws IOException {
 		Map<String, String> map = new HashMap<String,String>();
 		map.put("msg", "用户信息导出报表");
 		map.put("status", "导出成功");
@@ -58,38 +47,29 @@ public class Test {
 	}
 
 
-
-
 	/**@throws IOException 
 	 * @Excel(headRow=2,dataRow=5,sheetName="用户统计表",sheetSize=65536)
 	 * 分sheet测试  
 	 */
-	private static void separateSheet() throws IOException {
+	@Test
+	public void separateSheet() throws IOException {
 		//获取10w条数据
 		List<UserPlus> list = getData(0);
 		Map<String, String> map = new HashMap<String,String>();
 		map.put("msg", "用户信息导出报表");
 		map.put("status", "导出成功");
+		long start = System.currentTimeMillis();
 		Workbook workbook = ExcelExportUtil.exportExcel03(UserPlus.class, list, map);
+		long end = System.currentTimeMillis();
+		System.out.println("耗时：" + (end - start ) + "毫秒");
 		FileOutputStream outputStream = new FileOutputStream("D:/test/user.xls");
 		workbook.write(outputStream);
 		outputStream.flush();
 		outputStream.close();
 	}
-
-	@SuppressWarnings("unused")
-	private static void importExcel() throws FileNotFoundException, Exception {
-		File file = new File("D:/test/test3.xlsx");
-		String fileName = file.getName();
-		FileInputStream fileInputStream = new FileInputStream(file);
-		long start = System.currentTimeMillis();
-		ImportResult<User> result = ExcelImportUtil.importExcel(fileName, fileInputStream, User.class);
-		long end = System.currentTimeMillis();
-		System.out.println(result);
-		System.out.println("耗时：" + (end-start) + "毫秒");
-	}
 	
-	private static void exportExcel() throws FileNotFoundException, Exception {
+	@Test
+	public void exportExcel() throws FileNotFoundException, Exception {
 		File file = new File("D:/test/test/test4.xls");
 		FileOutputStream outputStream = new FileOutputStream(file);
 		List<UserPlus> list = getData(0);
@@ -118,6 +98,7 @@ public class Test {
 		out.flush();
 		out.close();
 		
+		//SXSSFWorkbook需要手动调用dispose，这样才能删除临时文件
 		if(SXSSFWorkbook.class.equals(workbook.getClass())){
 			SXSSFWorkbook wb = (SXSSFWorkbook)workbook;
 			wb.dispose();

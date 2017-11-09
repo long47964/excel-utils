@@ -3,7 +3,7 @@ package me.qinmian.test.bean;
 import me.qinmian.annotation.Excel;
 import me.qinmian.annotation.ExcelField;
 
-@Excel(headRow=2,dataRow=5,sheetName="用户统计表",sheetSize=30000)
+@Excel(headRow=2,dataRow=5,sheetName="用户统计表",sheetSize=65536)
 public class UserPlus extends User{
 	
 	@ExcelField(headName="用户ID",sort=101)

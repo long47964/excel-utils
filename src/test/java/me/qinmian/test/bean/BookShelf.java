@@ -46,6 +46,9 @@ public class BookShelf {
 	public void setPhone(String phone) {
 		this.phone = phone;
 	}
-	
-	
+
+	@Override
+	public String toString() {
+		return "BookShelf [brand=" + brand + ", hight=" + hight + ", phone=" + phone + ", book=" + book + "]";
+	}
 }

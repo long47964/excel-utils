@@ -14,7 +14,7 @@ public class ExportInfo {
 	
 	private Integer maxSheetSize;
 	
-	private Map<Field,ExcelFieldInfo> fieldInfoMap;
+	private Map<Field,ExportFieldInfo> fieldInfoMap;
 	
 	private List<SortableField> sortableFields;
 	
@@ -30,7 +30,7 @@ public class ExportInfo {
 		super();
 	}
 	public ExportInfo(String sheetName, Integer headRow, Integer dataRow,
-			Map<Field, ExcelFieldInfo> fieldInfoMap,
+			Map<Field, ExportFieldInfo> fieldInfoMap,
 			List<SortableField> sortableFields) {
 		super();
 		this.sheetName = sheetName;
@@ -69,12 +69,12 @@ public class ExportInfo {
 		this.dataRow = dataRow;
 	}
 
-	public Map<Field, ExcelFieldInfo> getFieldInfoMap() {
+	public Map<Field, ExportFieldInfo> getFieldInfoMap() {
 		return fieldInfoMap;
 	}
 
 
-	public void setFieldInfoMap(Map<Field, ExcelFieldInfo> fieldInfoMap) {
+	public void setFieldInfoMap(Map<Field, ExportFieldInfo> fieldInfoMap) {
 		this.fieldInfoMap = fieldInfoMap;
 	}
 	

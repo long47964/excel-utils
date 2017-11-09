@@ -1,5 +1,5 @@
 package me.qinmian.emun;
 
 public enum DataType {
-	String,Date,Number,Boolean,None;
+	String,Date,Number,Boolean,Link,None;
 }

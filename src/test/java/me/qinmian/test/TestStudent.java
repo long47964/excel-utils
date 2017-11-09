@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.junit.Test;
 
 import me.qinmian.emun.ExcelFileType;
 import me.qinmian.test.bean.Role;
@@ -17,12 +18,8 @@ import me.qinmian.util.ExcelExportUtil;
 
 public class TestStudent {
 
-	public static void main(String[] args) throws Exception {
-
-		exportExcel();
-	}
-
-	private static void exportExcel() throws FileNotFoundException, Exception {
+	@Test
+	public void exportExcel() throws FileNotFoundException, Exception {
 		File file = new File("D:/test/test/stu4.xls");
 		FileOutputStream outputStream = new FileOutputStream(file);
 		List<StudentEntity> list = getData();

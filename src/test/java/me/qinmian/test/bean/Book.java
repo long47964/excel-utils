@@ -3,13 +3,14 @@ package me.qinmian.test.bean;
 import java.util.Date;
 
 import me.qinmian.annotation.ExcelField;
+import me.qinmian.test.processor.MyImportProcessor;
 
 public class Book {
 
 	@ExcelField(headName="书名")
 	private String name;
 	
-	@ExcelField(headName="作者")
+	@ExcelField(headName="作者",importProcessor=MyImportProcessor.class)
 	private String author;
 	
 	@ExcelField(headName="发布日期")

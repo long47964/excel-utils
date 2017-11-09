@@ -4,17 +4,19 @@ import java.util.Date;
 
 import org.apache.poi.ss.usermodel.CellStyle;
 
+import me.qinmian.annotation.DataStyle;
 import me.qinmian.annotation.Excel;
 import me.qinmian.annotation.ExcelField;
 import me.qinmian.annotation.ExcelRowCell;
 import me.qinmian.annotation.ExportCellStyle;
-import me.qinmian.annotation.ExportStyle;
+import me.qinmian.annotation.HeadStyle;
 import me.qinmian.annotation.StaticExcelRow;
 
-@StaticExcelRow(cells={@ExcelRowCell(startRow=0,startCol=0,endRow=0,endCol=8,value="计算机一班学生"
+@StaticExcelRow(cells={@ExcelRowCell(startRow=0,autoCol=true,value="计算机一班学生"
 		,cellStyle=@ExportCellStyle(verticalAlignment=CellStyle.VERTICAL_CENTER,alignment=CellStyle.ALIGN_CENTER))})
 @Excel(sheetName="学生表",dataRow=2,headRow=1)
-@ExportStyle(headStyle=@ExportCellStyle(verticalAlignment=CellStyle.VERTICAL_CENTER,alignment=CellStyle.ALIGN_CENTER))
+@HeadStyle(@ExportCellStyle(verticalAlignment=CellStyle.VERTICAL_CENTER,alignment=CellStyle.ALIGN_CENTER))
+@DataStyle
 public class StudentEntity {
 	
 		@ExcelField(headName="ID")

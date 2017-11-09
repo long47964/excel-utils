@@ -6,13 +6,15 @@ import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
 
+import me.qinmian.annotation.DataStyle;
 import me.qinmian.annotation.Excel;
 import me.qinmian.annotation.ExcelField;
 import me.qinmian.annotation.ExcelRowCell;
 import me.qinmian.annotation.ExportCellStyle;
 import me.qinmian.annotation.ExportFontStyle;
-import me.qinmian.annotation.ExportStyle;
+import me.qinmian.annotation.HeadStyle;
 import me.qinmian.annotation.StaticExcelRow;
+import me.qinmian.emun.DataType;
 
 
 @StaticExcelRow(cells={
@@ -21,7 +23,9 @@ import me.qinmian.annotation.StaticExcelRow;
 				@ExcelRowCell(startRow=1,autoCol=true,value="${status}",cellStyle=@ExportCellStyle(verticalAlignment=CellStyle.VERTICAL_CENTER,alignment=CellStyle.ALIGN_CENTER
 								,fontStyle=@ExportFontStyle(color=HSSFColor.RED.index)))
 				})
-@ExportStyle( dataHightInPoint=25 ,headStyle=@ExportCellStyle(alignment=CellStyle.ALIGN_CENTER,verticalAlignment=CellStyle.VERTICAL_CENTER,fontStyle=@ExportFontStyle(color=HSSFColor.DARK_BLUE.index)))
+//@ExportStyle( dataHightInPoint=25 ,headStyle=@ExportCellStyle(alignment=CellStyle.ALIGN_CENTER,verticalAlignment=CellStyle.VERTICAL_CENTER,fontStyle=@ExportFontStyle(color=HSSFColor.DARK_BLUE.index)))
+@HeadStyle(@ExportCellStyle(alignment=CellStyle.ALIGN_CENTER,verticalAlignment=CellStyle.VERTICAL_CENTER,fontStyle=@ExportFontStyle(color=HSSFColor.DARK_BLUE.index)))
+@DataStyle
 @Excel(headRow=2,dataRow=5)
 public class User {
 	
@@ -32,14 +36,18 @@ public class User {
 	private String password;
 	
 	@ExcelField(headName="邮箱",width=18)
+//	@ExportStyle(dataStyle=	@ExportCellStyle(
+//			fontStyle=@ExportFontStyle(fontName="微软雅黑",color=HSSFColor.BLUE.index,underline=Font.U_SINGLE)))
+	@DataStyle(@ExportCellStyle(fontStyle=@ExportFontStyle(fontName="微软雅黑",color=HSSFColor.BLUE.index,underline=Font.U_SINGLE)))
 	private String email;
 	
 	@ExcelField(headName="电话")
 	private String phone;
 	
 	@ExcelField(headName="地址")
-	@ExportStyle(dataStyle=	@ExportCellStyle(
-			fontStyle=@ExportFontStyle(fontName="微软雅黑",color=HSSFColor.RED.index,underline=Font.U_SINGLE)))
+//	@ExportStyle(dataStyle=	@ExportCellStyle(
+//			fontStyle=@ExportFontStyle(fontName="微软雅黑",color=HSSFColor.RED.index)))
+	@DataStyle(@ExportCellStyle(fontStyle=@ExportFontStyle(color=HSSFColor.RED.index)))
 	private String address;
 	
 	@ExcelField(headName="昵称")
@@ -48,7 +56,7 @@ public class User {
 	@ExcelField(headName="名字")
 	private String name;
 	
-	@ExcelField(headName="生日",dataFormat="yyyy年m月d日",width=15)
+	@ExcelField(headName="生日",dateFormat="yyyy年MM月dd日 HH点",width=15,dataType=DataType.String)
 	private Date birthday;
 
 	public String getUsername() {

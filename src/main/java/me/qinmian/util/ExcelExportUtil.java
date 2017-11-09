@@ -5,6 +5,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -13,10 +14,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -29,22 +32,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
+import me.qinmian.annotation.DataStyle;
 import me.qinmian.annotation.Excel;
 import me.qinmian.annotation.ExcelField;
 import me.qinmian.annotation.ExcelRowCell;
 import me.qinmian.annotation.ExportCellStyle;
 import me.qinmian.annotation.ExportFontStyle;
 import me.qinmian.annotation.ExportStyle;
+import me.qinmian.annotation.HeadStyle;
 import me.qinmian.annotation.IgnoreField;
 import me.qinmian.annotation.StaticExcelRow;
-import me.qinmian.bean.ExcelFieldInfo;
 import me.qinmian.bean.ExcelRowCellInfo;
 import me.qinmian.bean.ExportCellStyleInfo;
+import me.qinmian.bean.ExportFieldInfo;
 import me.qinmian.bean.ExportFontStyleInfo;
 import me.qinmian.bean.ExportInfo;
 import me.qinmian.bean.SortComparator;
 import me.qinmian.bean.SortableField;
 import me.qinmian.bean.StaticExcelRowCellInfo;
+import me.qinmian.bean.inter.ExportProcessor;
+import me.qinmian.bean.inter.LinkProcessor;
 import me.qinmian.emun.DataType;
 import me.qinmian.emun.ExcelFileType;
 
@@ -63,7 +70,7 @@ public class ExcelExportUtil {
 	
 	private final static int DEFAULT_SORT = 100;
 	
-	private final static String DEFAULT_SHEET_NAME = "Sheet1";
+	private final static String DEFAULT_SHEET_NAME = "Sheet";
 	
 	private final static String REGEX = "\\$\\{.*\\}";
 	
@@ -81,7 +88,7 @@ public class ExcelExportUtil {
 	
 	private final static short DEFAULT_HIGHT_IN_POINT = 25;
 
-	private static Map<Class<?> , ExportInfo> infoMap;	
+	private final static Map<Class<?> , ExportInfo> infoMap = new HashMap<Class<?>, ExportInfo>(8);;	
 	
 	/**
 	 *  key
@@ -232,13 +239,10 @@ public class ExcelExportUtil {
 		if(clazz == null){
 			return null;
 		}
-		if(infoMap == null ){
-			infoMap = new HashMap<Class<?>, ExportInfo>();
-		}
 		ExportInfo exportInfo = infoMap.get(clazz) ;
 		if(exportInfo == null ){	
 			try {
-				exportInfo = initInfoForTargetClass(clazz);
+				exportInfo = initTargetClass(clazz);
 			} catch (IntrospectionException e) {
 				throw new RuntimeException(e);
 			}
@@ -351,7 +355,7 @@ public class ExcelExportUtil {
 		Map<ExportCellStyleInfo, CellStyle> tempCacheMap = new HashMap<ExportCellStyleInfo, CellStyle>();
 		Map<Field, CellStyle> styleMap = new HashMap<Field, CellStyle>();
 		CellStyle style;
-		for(Map.Entry<Field,ExcelFieldInfo> entry : exportInfo.getFieldInfoMap().entrySet()){
+		for(Map.Entry<Field,ExportFieldInfo> entry : exportInfo.getFieldInfoMap().entrySet()){
 			ExportCellStyleInfo styleInfo ;
 			if(isHead){
 				styleInfo = entry.getValue().getHeadStyle();
@@ -465,10 +469,10 @@ public class ExcelExportUtil {
 
 	private static void setColumWidth(ExcelFileType type,ExportInfo exportInfo,
 			List<Field> availableFields,Sheet sheet) {
-		Map<Field, ExcelFieldInfo> fieldInfoMap = exportInfo.getFieldInfoMap();
+		Map<Field, ExportFieldInfo> fieldInfoMap = exportInfo.getFieldInfoMap();
 		for(int i = 0 ; i < availableFields.size() ; i++){
 			Field field = availableFields.get(i);
-			ExcelFieldInfo excelFieldInfo = fieldInfoMap.get(field);
+			ExportFieldInfo excelFieldInfo = fieldInfoMap.get(field);
 			if (excelFieldInfo.getWidth() != null) {
 				sheet.setColumnWidth(i, excelFieldInfo.getWidth()*256);	
 				continue;
@@ -490,7 +494,7 @@ public class ExcelExportUtil {
 			Map<Field, CellStyle> dataCellStyleMap, List<Field> availableFields,Sheet sheet)
 			throws IllegalAccessException, InvocationTargetException {
 		
-		Map<Field, ExcelFieldInfo> fieldInfoMap = exportInfo.getFieldInfoMap();
+		Map<Field, ExportFieldInfo> fieldInfoMap = exportInfo.getFieldInfoMap();
 		Cell cell;
 		Field field;
 		Row row;
@@ -517,7 +521,8 @@ public class ExcelExportUtil {
 					}
 					returnVal = method.invoke(returnVal);
 				}
-				setCellValue(cell, returnVal);
+				
+				setCellValue(cell, fieldInfoMap.get(field),  returnVal, obj);
 				if(dataCellStyleMap != null && dataCellStyleMap.get(field) != null){
 					cell.setCellStyle(dataCellStyleMap.get(field));					
 				}
@@ -533,7 +538,7 @@ public class ExcelExportUtil {
 
 
 
-	private static void doCreateSheetHeadRow(Map<Field, ExcelFieldInfo> fieldInfoMap,
+	private static void doCreateSheetHeadRow(Map<Field, ExportFieldInfo> fieldInfoMap,
 			Map<Field, CellStyle> headCellStyleMap, Sheet sheet, List<SortableField> fieldList, int rowNum, int cellNum,
 			int headRowCount , short hightInPonit) {
 		if(headRowCount == 0 ){
@@ -572,7 +577,7 @@ public class ExcelExportUtil {
 		}
 	}
 
-	private static void doCreateSheetSingleHeadRow(Map<Field, ExcelFieldInfo> fieldInfoMap,
+	private static void doCreateSheetSingleHeadRow(Map<Field, ExportFieldInfo> fieldInfoMap,
 			Map<Field, CellStyle> headCellStyleMap, Row row, List<SortableField> fieldList, int cellNum) {
 		
 		Cell cell;
@@ -601,7 +606,7 @@ public class ExcelExportUtil {
 		}
 		return count;
 	}
-	private static ExportInfo initInfoForTargetClass(Class<?> clazz)
+	private static ExportInfo initTargetClass(Class<?> clazz)
 			throws IntrospectionException {
 		ExportInfo exportInfo ;
 		int headRowNum = DEFAULT_HEAD_ROW ; 
@@ -634,7 +639,19 @@ public class ExcelExportUtil {
 			dataHightInPoint = exportStyle.dataHightInPoint();
 			headHightInPoint = exportStyle.headHightInPoint();
 		}
-		Map<Field,ExcelFieldInfo> fieldInfoMap = new HashMap<Field,ExcelFieldInfo>();
+		if(clazz.isAnnotationPresent(HeadStyle.class)){
+			HeadStyle headStyle = clazz.getAnnotation(HeadStyle.class);
+			globalHeadStyleInfo = createExportCellStyleInfo(headStyle.value());
+			headHightInPoint = headStyle.hightInPoint();
+		}
+		
+		if(clazz.isAnnotationPresent(DataStyle.class)){
+			DataStyle dataStyle = clazz.getAnnotation(DataStyle.class);
+			globalDataStyleInfo = createExportCellStyleInfo(dataStyle.value());
+			dataHightInPoint = dataStyle.hightInPoint();
+		}
+		
+		Map<Field,ExportFieldInfo> fieldInfoMap = new HashMap<Field,ExportFieldInfo>();
 		//获取所有字段，包括父类字段
 		List<Field> fieldList = getAllFieldFromClass(clazz);
 		List<SortableField> sortFieldList = new ArrayList<SortableField>(fieldList.size());
@@ -695,7 +712,7 @@ public class ExcelExportUtil {
 	}
 
 	private static int createFieldInfo(Class<?> clazz, ExportCellStyleInfo parentHeadStyle,
-			ExportCellStyleInfo parentDataStyle, Map<Field, ExcelFieldInfo> fieldInfoMap,
+			ExportCellStyleInfo parentDataStyle, Map<Field, ExportFieldInfo> fieldInfoMap,
 			List<Field> fieldList, List<SortableField> sortFieldList,
 			List<Method> parentMethods,int count)
 			throws IntrospectionException {
@@ -715,7 +732,7 @@ public class ExcelExportUtil {
 			
 			//获取字段的注解信息
 			int sort = DEFAULT_SORT;
-			ExcelFieldInfo fieldInfo = new ExcelFieldInfo(name);
+			ExportFieldInfo fieldInfo = new ExportFieldInfo(name);
 			if(field.isAnnotationPresent(ExcelField.class)){
 				ExcelField excelField = field.getAnnotation(ExcelField.class);
 				sort = excelField.sort();
@@ -733,6 +750,15 @@ public class ExcelExportUtil {
 				if(fieldDataStyleInfo == null && fieldExportStyle.dataEqHead()){
 					fieldDataStyleInfo = fieldHeadStyleInfo;
 				}
+			}
+			if(field.isAnnotationPresent(HeadStyle.class)){
+				HeadStyle headStyle = field.getAnnotation(HeadStyle.class);
+				fieldHeadStyleInfo = createExportCellStyleInfo(headStyle.value());
+			}
+			
+			if(field.isAnnotationPresent(DataStyle.class)){
+				DataStyle dataStyle = field.getAnnotation(DataStyle.class);
+				fieldDataStyleInfo = createExportCellStyleInfo(dataStyle.value());
 			}
 			fieldDataStyleInfo = fieldDataStyleInfo != null ? fieldDataStyleInfo : parentDataStyle;
 			fieldHeadStyleInfo = fieldHeadStyleInfo != null ? fieldHeadStyleInfo :parentHeadStyle;
@@ -762,7 +788,7 @@ public class ExcelExportUtil {
 		return count;
 	}
 
-	private static void setExcelFieldInfo(ExcelFieldInfo fieldInfo,
+	private static void setExcelFieldInfo(ExportFieldInfo fieldInfo,
 			ExcelField excelField) {
 		if(!"".equals(excelField.headName())){
 			fieldInfo.setHeadName(excelField.headName());
@@ -786,15 +812,55 @@ public class ExcelExportUtil {
 		if(!excelField.autoWidth()){
 			fieldInfo.setAutoWidth(excelField.autoWidth());
 		}
+		if(excelField.exportProcessor() != Void.class && 
+				ExportProcessor.class.isAssignableFrom(excelField.exportProcessor())){
+			Class<?> clazz = excelField.exportProcessor();
+			try {
+				ExportProcessor exportProcessor = (ExportProcessor) clazz.newInstance();
+				fieldInfo.setExportProcessor(exportProcessor);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
 	}
 
 	/** 给cell设置值ֵ
 	 * @param cell
 	 * @param returnVal
 	 */
-	private static void setCellValue(Cell cell, Object returnVal) {//以object来接收，会将基本数据类型自动装箱为包装类型
-		if(returnVal == null ){
+	private static void setCellValue(Cell cell, ExportFieldInfo fieldInfo, Object returnVal, Object current) {//以object来接收，会将基本数据类型自动装箱为包装类型
+		
+		ExportProcessor processor = fieldInfo.getExportProcessor();
+		if(processor != null){
+			if(LinkProcessor.class.isAssignableFrom(processor.getClass())){
+				//处理链接类型
+				setHyperlink(cell, (LinkProcessor) processor, returnVal, current);
+			}
+			returnVal = processor.process(returnVal, current);
+		}else if(returnVal == null ){
 			return ;
+		}else if(fieldInfo.getDataType() != null && fieldInfo.getDataType() != DataType.None){
+			try {
+				switch (fieldInfo.getDataType()) {
+				case String:
+					returnVal = ConvertUtils.convertIfNeccesary(returnVal, String.class, fieldInfo.getDateFormat());
+					break;
+				case Number :
+					returnVal = ConvertUtils.convertIfNeccesary(returnVal, Double.class, null);
+					break;
+				case Boolean :
+					returnVal = ConvertUtils.convertIfNeccesary(returnVal, Boolean.class, null);
+					break;
+				case Date :
+					returnVal = ConvertUtils.convertIfNeccesary(returnVal, Date.class, null);
+					break;
+				default:
+					break;
+				}
+			} catch (ParseException e) {
+				throw new RuntimeException(e);
+			}
+			
 		}
 		if(String.class.equals(returnVal.getClass())){
 			cell.setCellValue((String)returnVal);
@@ -810,6 +876,39 @@ public class ExcelExportUtil {
 	}
 	
 	
+	private static void setHyperlink(Cell cell, LinkProcessor processor, Object returnVal, Object current) {
+		int linkType = 0 ;		
+		String prefix = "";
+		switch (processor.getLinkType()) {
+		case Url:
+			linkType = Hyperlink.LINK_URL;
+			prefix = "http";
+			break;
+		case Document:
+			linkType = Hyperlink.LINK_DOCUMENT;
+			break;
+		case Email:
+			linkType = Hyperlink.LINK_EMAIL;
+			prefix = "mailto:";
+			break;
+		case File:
+			linkType = Hyperlink.LINK_FILE;
+			break;
+		}
+		CreationHelper creationHelper = cell.getSheet().getWorkbook().getCreationHelper();
+		org.apache.poi.ss.usermodel.Hyperlink hyperlink = creationHelper.createHyperlink(linkType);
+		String address = processor.getLinkAddress(returnVal, current);
+		if(!address.startsWith(prefix)){
+			if(linkType == Hyperlink.LINK_EMAIL){
+				address = prefix +  address;				
+			}else{
+				address = "http://" + address;
+			}
+		}
+		hyperlink.setAddress(address);
+		cell.setHyperlink(hyperlink);
+	}
+
 	private static ExportCellStyleInfo createExportCellStyleInfo(ExportCellStyle annoCellStyle){
 		ExportFontStyle annoFontStyle = annoCellStyle.fontStyle();
 		ExportFontStyleInfo fontStyleInfo = getExportInfo(ExportFontStyleInfo.class, annoFontStyle);

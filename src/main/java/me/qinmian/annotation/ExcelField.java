@@ -29,4 +29,7 @@ public @interface ExcelField {
 	
 	boolean autoWidth() default true;
 		
+	Class<?> exportProcessor() default Void.class;
+	
+	Class<?> importProcessor() default Void.class;
 }

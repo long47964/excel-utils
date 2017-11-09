@@ -3,6 +3,8 @@ package me.qinmian.bean;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import me.qinmian.bean.inter.ImportProcessor;
+
 public class ImportFieldInfo {
 
 	private List<Class<?>> typeChain;
@@ -15,19 +17,24 @@ public class ImportFieldInfo {
 
 	private String dateFormat;
 	
+	private ImportProcessor importProcessor;
+	
 	
 	public ImportFieldInfo() {}
 
-
 	public ImportFieldInfo(List<Class<?>> typeChain, List<Method> setMethodChain, List<Method> getMethodChain,
-			boolean required, String dateFormat) {
+			boolean required, String dateFormat, ImportProcessor importProcessor) {
 		super();
 		this.typeChain = typeChain;
 		this.setMethodChain = setMethodChain;
 		this.getMethodChain = getMethodChain;
 		this.required = required;
 		this.dateFormat = dateFormat;
+		this.importProcessor = importProcessor;
 	}
+
+
+
 
 
 	public List<Class<?>> getTypeChain() {
@@ -78,6 +85,15 @@ public class ImportFieldInfo {
 	public void setDateFormat(String dateFormat) {
 		this.dateFormat = dateFormat;
 	}
+
+	public ImportProcessor getImportProcessor() {
+		return importProcessor;
+	}
+
+	public void setImportProcessor(ImportProcessor importProcessor) {
+		this.importProcessor = importProcessor;
+	}
+
 
 	
 }

@@ -21,6 +21,10 @@ import me.qinmian.web.annotation.ExcelFile;
 
 public class ExcelReturnValueHandler implements HandlerMethodReturnValueHandler {
 
+	private String sourceCharset = "UTF-8";
+
+	private String targetCharset = "ISO8859-1";
+	
 	@Override
 	public boolean supportsReturnType(MethodParameter returnType) {
 		return returnType.hasMethodAnnotation(ExcelFile.class) && 
@@ -57,7 +61,7 @@ public class ExcelReturnValueHandler implements HandlerMethodReturnValueHandler 
 			resp.reset();
 			resp.setContentType("application/vnd.ms-excel;charset=utf-8");
 			resp.setHeader("Content-Disposition", "attachment;filename="+ 
-							new String((exportName + suffix).getBytes("utf-8"), "iso-8859-1"));
+							new String((exportName + suffix).getBytes(sourceCharset), targetCharset));
 			bos = new BufferedOutputStream(resp.getOutputStream());
 			workbook.write(bos);
 			bos.flush();
@@ -73,9 +77,22 @@ public class ExcelReturnValueHandler implements HandlerMethodReturnValueHandler 
 				wb.dispose();
 			}
 		}
-		
-		
+	}
 
+	public String getSourceCharset() {
+		return sourceCharset;
+	}
+
+	public void setSourceCharset(String sourceCharset) {
+		this.sourceCharset = sourceCharset;
+	}
+
+	public String getTargetCharset() {
+		return targetCharset;
+	}
+
+	public void setTargetCharset(String targetCharset) {
+		this.targetCharset = targetCharset;
 	}
 
 }

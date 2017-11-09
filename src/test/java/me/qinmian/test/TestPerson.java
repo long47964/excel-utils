@@ -9,18 +9,15 @@ import java.util.List;
 
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.junit.Test;
 
 import me.qinmian.test.bean.Person;
 import me.qinmian.util.ExcelExportUtil;
 
 public class TestPerson {
 
-	public static void main(String[] args) throws Exception {
-			
-		exportExcel();
-	}
-
-	private static void exportExcel() throws FileNotFoundException, Exception {
+	@Test
+	public void exportExcel() throws FileNotFoundException, Exception {
 		File file = new File("D:/test/test/ppp44.xls");
 		FileOutputStream outputStream = new FileOutputStream(file);
 		List<Person> list = getData();
@@ -35,21 +32,6 @@ public class TestPerson {
 		System.out.println("耗时：" + (end-start) + "毫秒");		
 		System.out.println("****************************");
 		workbook.write(outputStream);
-		
-		
-		/*list.clear();
-		
-		list = getData();
-		long start1 = System.currentTimeMillis();
-		workbook = ExcelExportUtil.exportExcel(Person.class,list, ExcelFileType.XLS,null,null,true);
-		long end1 = System.currentTimeMillis();
-		System.out.println("耗时：" + (end1-start1) + "毫秒");	
-		System.out.println("****************************");
-		FileOutputStream out = new FileOutputStream("D:/test/test/pp33.xls");
-		workbook.write(out);
-		
-		out.flush();
-		out.close();*/
 		
 		if(SXSSFWorkbook.class.equals(workbook.getClass())){
 			SXSSFWorkbook wb = (SXSSFWorkbook)workbook;

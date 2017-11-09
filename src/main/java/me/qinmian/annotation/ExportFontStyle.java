@@ -23,7 +23,7 @@ public @interface ExportFontStyle {
 		
 	short fontHeightInPoints() default 10;
 	
-	String fontName() default "宋体";
+	String fontName() default "微软雅黑";
 	
 	boolean italic() default false;
 	

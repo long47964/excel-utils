@@ -27,12 +27,12 @@ import me.qinmian.annotation.Excel;
 import me.qinmian.annotation.ExcelField;
 import me.qinmian.bean.ImportFieldInfo;
 import me.qinmian.bean.ImportInfo;
+import me.qinmian.bean.inter.ImportProcessor;
+import me.qinmian.emun.ExcelFileType;
 
 public  class ExcelImportUtil {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ExcelExportUtil.class);
-
-//	private final static String DAFAULT_DATAFORMAT = "yyyy-MM-dd";
 	
 	private final static int DEFAULT_DATA_ROW = 1;
 	
@@ -43,14 +43,55 @@ public  class ExcelImportUtil {
 	private final static Map<Class<?>,ImportInfo> importInfoMap = new HashMap<Class<?>,ImportInfo>();
 	
 	
-	public static <T>  ImportResult<T> importExcel(String fileName,InputStream inputStream,Class<T> clazz) throws Exception{
-
+	
+	/**
+	 * @param clazz pojo对应class
+	 * @param fileName 文件名
+	 * @param inputStream 输入流
+	 * @return 导入结果list
+	 * @throws Exception
+	 */
+	public static <T>  List<T> importExcel(Class<T> clazz, String fileName,InputStream inputStream) throws Exception{	
+		List<T> list = new ArrayList<T>();
+		list.addAll(importExcel(fileName, inputStream, clazz).getDataMap().values());
+		return list;
+	}
+	
+	
+	/**
+	 * @param clazz pojo对应class
+	 * @param fileType  excle文件类型
+	 * @param inputStream 输入流
+	 * @return 导入结果list
+	 * @throws Exception
+	 */
+	public static <T>  List<T> importExcel(Class<T> clazz, ExcelFileType fileType,InputStream inputStream) throws Exception{	
+		List<T> list = new ArrayList<T>();
+		list.addAll(importExcel(fileType, inputStream, clazz).getDataMap().values());
+		return list;
+	}
+	
+	
+	/**
+	 * @param fileName 文件名
+	 * @param inputStream 输入流
+	 * @param clazz pojo对应class
+	 * @return 导入结果
+	 * @see me.qinmian.util.ImportResult
+	 * @throws Exception
+	 */
+	public static <T>  ImportResult<T> importExcel(String fileName,InputStream inputStream,Class<T> clazz) throws Exception{	
+		ExcelFileType fileType = getFileType(fileName);
+		return importExcel(fileType, inputStream, clazz);
+	}
+	
+	public static <T>  ImportResult<T> importExcel(ExcelFileType fileType,InputStream inputStream,Class<T> clazz) throws Exception{
 		if(importInfoMap.get(clazz) == null){//初始化信息
-			initForTargetClass(clazz);			
+			initTargetClass(clazz);			
 		}
 		ImportInfo importInfo = importInfoMap.get(clazz);
 		Integer headRow = importInfo.getHeadRow();
-		Workbook workbook = createWorkbook(fileName, inputStream);
+		Workbook workbook = createWorkbook(fileType, inputStream);
 		
 		int sheetNum = workbook.getNumberOfSheets();
 		if(sheetNum < 1 ){
@@ -64,7 +105,26 @@ public  class ExcelImportUtil {
 		List<String> headNameList = createHeadNameList(sheet, headRow);
 		return readData(clazz, importInfo, workbook,headNameList);
 	}
+	
 
+	private static Workbook createWorkbook(ExcelFileType fileType, InputStream inputStream) throws IOException {
+		Workbook workbook;
+		if(ExcelFileType.XLS == fileType){
+			workbook = new HSSFWorkbook(inputStream);
+		}else{
+			workbook = new XSSFWorkbook(inputStream);
+		}
+		return workbook;
+	}
+	
+	
+	private static ExcelFileType getFileType(String fileName) {
+		if("xls".equalsIgnoreCase(fileName.substring(fileName.lastIndexOf(".")+1))){
+			return ExcelFileType.XLS;
+		}
+		return ExcelFileType.XLSX;
+	}
+	
 	private static <T> ImportResult<T> readData(Class<T> clazz, ImportInfo importInfo, Workbook workbook, List<String> headNameList)
 			throws InstantiationException, IllegalAccessException {
 		int sheetNum = workbook.getNumberOfSheets();
@@ -95,8 +155,10 @@ public  class ExcelImportUtil {
 							}
 							cell = row.getCell(j);
 							if(cell != null){
-								Object value = getValue(fieldInfo.getTypeChain().get(fieldInfo.getTypeChain().size() - 1), cell,"");
-								if(String.class.equals(fieldInfo.getTypeChain().get(fieldInfo.getTypeChain().size() - 1)) && StringUtils.isEmpty(value)){
+								Object value = getValue(fieldInfo, cell);
+								
+								if(String.class.equals(fieldInfo.getTypeChain().get(fieldInfo.getTypeChain().size() - 1)) 
+										&& StringUtils.isEmpty(value)){
 									value = null;
 								}
 								if(value == null && fieldInfo.isRequired()){
@@ -165,17 +227,7 @@ public  class ExcelImportUtil {
 		return headNameList;
 	}
 
-	private static Workbook createWorkbook(String fileName, InputStream inputStream) throws IOException {
-		Workbook workbook ;
-		if("xls".equalsIgnoreCase(fileName.substring(fileName.lastIndexOf(".")+1))){
-			workbook = new HSSFWorkbook(inputStream);
-		}else{
-			workbook = new XSSFWorkbook(inputStream);
-		}
-		return workbook;
-	}
-
-	private static <T> void initForTargetClass(Class<T> clazz)
+	private static <T> void initTargetClass(Class<T> clazz)
 			throws IntrospectionException {
 		Integer headNum = DEFAULT_HEAD_ROW;
 		Integer dataNum = DEFAULT_DATA_ROW;
@@ -187,7 +239,6 @@ public  class ExcelImportUtil {
 				headNum = excel.headRow();
 			}			
 		}
-//		Field[] fields = clazz.getDeclaredFields();
 		List<Field> fields = ClassUtils.getAllFieldFromClass(clazz);
 		fieldInfoMap = new HashMap<String, ImportFieldInfo>();
 		List<Class<?>> classChain = new ArrayList<Class<?>>();
@@ -216,6 +267,7 @@ public  class ExcelImportUtil {
 			if(ClassUtils.isSimpleType(field.getType())){
 				boolean required = false;
 				String dateFormat = null ;
+				ImportProcessor processor = null;
 				if(field.isAnnotationPresent(ExcelField.class)){
 					ExcelField excelField = field.getAnnotation(ExcelField.class);
 					if(!"".equals(excelField.headName())){
@@ -223,8 +275,18 @@ public  class ExcelImportUtil {
 					}
 					required = excelField.required();
 					dateFormat = excelField.dateFormat();
+					Class<?> processorClazz = excelField.importProcessor();
+					if(processorClazz != Void.class && 
+							ImportProcessor.class.isAssignableFrom(processorClazz)){
+						try {
+							processor = (ImportProcessor) processorClazz.newInstance();
+						} catch (Exception e) {
+							throw new RuntimeException(e);
+						}
+					}
 				}
-				fieldInfoMap.put(name, new ImportFieldInfo(currentClassChain,currentSetMethodChain,getMethodChain,required,dateFormat));				
+				fieldInfoMap.put(name, new ImportFieldInfo(currentClassChain,currentSetMethodChain
+						,getMethodChain,required,dateFormat,processor));				
 			}else{
 				
 				List<Method> currentGetMehtodChain = new ArrayList<Method>();
@@ -239,7 +301,10 @@ public  class ExcelImportUtil {
 		}
 	}
 	
-	public  static Object getValue(Class<?> type,Cell cell,String dateFormat) throws Exception{
+	public  static Object getValue(ImportFieldInfo fieldInfo, Cell cell) throws Exception{
+		int size = fieldInfo.getTypeChain().size();
+		Class<?> type = fieldInfo.getTypeChain().get(size - 1);
+		String dateFormat = fieldInfo.getDateFormat();
 		int cellType = cell.getCellType();
 		Object obj = null ;
 		switch (cellType) {
@@ -269,8 +334,10 @@ public  class ExcelImportUtil {
 		case Cell.CELL_TYPE_ERROR:
 			return null;
 		}
+		if(fieldInfo.getImportProcessor() != null){
+			obj = fieldInfo.getImportProcessor().process(obj);
+		}
 		obj = ConvertUtils.convertIfNeccesary(obj, type, dateFormat);
-//		obj = convertIfNeccesary(obj,type);
 		return obj;
 	}
 	

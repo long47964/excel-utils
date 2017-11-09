@@ -3,9 +3,10 @@ package me.qinmian.bean;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import me.qinmian.bean.inter.ExportProcessor;
 import me.qinmian.emun.DataType;
 
-public class ExcelFieldInfo {
+public class ExportFieldInfo {
 
 	private List<Method> methodChain;
 	
@@ -24,14 +25,16 @@ public class ExcelFieldInfo {
 	private Short width;
 	
 	private Boolean autoWidth;
-			
-	public ExcelFieldInfo() {}
 	
-	public ExcelFieldInfo(String headName) {
+	private ExportProcessor exportProcessor;
+			
+	public ExportFieldInfo() {}
+	
+	public ExportFieldInfo(String headName) {
 		this.headName =headName;
 	}
 
-	public ExcelFieldInfo(List<Method> methodChain,
+	public ExportFieldInfo(List<Method> methodChain,
 			ExportCellStyleInfo headStyle, ExportCellStyleInfo dataStyle,
 			String headName, String dataFormat, String dateFormat,
 			DataType dataType) {
@@ -115,4 +118,13 @@ public class ExcelFieldInfo {
 	public void setAutoWidth(Boolean autoWidth) {
 		this.autoWidth = autoWidth;
 	}
+
+	public ExportProcessor getExportProcessor() {
+		return exportProcessor;
+	}
+
+	public void setExportProcessor(ExportProcessor exportProcessor) {
+		this.exportProcessor = exportProcessor;
+	}
+
 }
