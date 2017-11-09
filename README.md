@@ -98,6 +98,7 @@ public class Role {
 ==注意：2017-11-09更新之中将表头样式和数据行样式分离，分为两个注解，注解如下：==
 ****
 @HeadStyle和DataStyle，两个注解的属性是一致
+****
 |属性|含义|
 |--|--|
 |value|@ExportCellStyle类型，设置具体的样式
