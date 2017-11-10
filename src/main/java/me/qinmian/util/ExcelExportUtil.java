@@ -1,14 +1,11 @@
 package me.qinmian.util;
 
 import java.beans.IntrospectionException;
-import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -20,7 +17,6 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CreationHelper;
-import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -28,28 +24,12 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
-import me.qinmian.annotation.DataStyle;
-import me.qinmian.annotation.Excel;
-import me.qinmian.annotation.ExcelField;
-import me.qinmian.annotation.ExcelRowCell;
-import me.qinmian.annotation.ExportCellStyle;
-import me.qinmian.annotation.ExportFontStyle;
-import me.qinmian.annotation.ExportStyle;
-import me.qinmian.annotation.HeadStyle;
-import me.qinmian.annotation.IgnoreField;
-import me.qinmian.annotation.StaticExcelRow;
 import me.qinmian.bean.ExcelRowCellInfo;
-import me.qinmian.bean.ExportCellStyleInfo;
 import me.qinmian.bean.ExportFieldInfo;
-import me.qinmian.bean.ExportFontStyleInfo;
 import me.qinmian.bean.ExportInfo;
-import me.qinmian.bean.SortComparator;
 import me.qinmian.bean.SortableField;
-import me.qinmian.bean.StaticExcelRowCellInfo;
 import me.qinmian.bean.inter.ExportProcessor;
 import me.qinmian.bean.inter.LinkProcessor;
 import me.qinmian.emun.DataType;
@@ -61,107 +41,25 @@ import me.qinmian.emun.ExcelFileType;
  *
  */
 public class ExcelExportUtil {
-	
-	private static final Logger LOG = LoggerFactory.getLogger(ExcelExportUtil.class);
-	
-	private final static int DEFAULT_HEAD_ROW = 0;
-	
-	private final static int DEFAULT_DATA_ROW = 1;
-	
-	private final static int DEFAULT_SORT = 100;
-	
-	private final static String DEFAULT_SHEET_NAME = "Sheet";
-	
+		
 	private final static String REGEX = "\\$\\{.*\\}";
-	
-	private final static String GET_METHOD_PREFIX = "get";
-	
-	private final static String SET_METHOD_PREFIX = "set";
-	
-	private final static String ANNO_KEY = "anno";
-	
-	private final static String STYLE_KEY = "style";
 	
 	private final static int XLX_MAX_SHEET_SIZE = 65536;
 	
 	private final static int XLXS_MAX_SHEET_SIZE = 1048576;
 	
-	private final static short DEFAULT_HIGHT_IN_POINT = 25;
-
 	private final static Map<Class<?> , ExportInfo> infoMap = new HashMap<Class<?>, ExportInfo>(8);;	
+
+	
+	//-------------------------07
 	
 	/**
-	 *  key
-	 *  value
+	 * @param clazz 要导出的类
+	 * @param list 导出的数据
+	 * @return
 	 */
-	
-	private static Map<Class<?>,Map<String,Map<Method,Method>>> classInfoCache;
-
-	//初始化缓存信息
-	static
-	{
-		try {
-			Map<Method,Method> cellStyleMethodMap = new HashMap<Method,Method>();
-			Map<Method,Method> cellAnno2InfoMap = new HashMap<Method,Method>();
-			Map<Method,Method> fontStyleMethodMap = new HashMap<Method,Method>();
-			Map<Method,Method> fontAnno2InfoMap = new HashMap<Method,Method>();
-			Class<ExportCellStyleInfo> cellStyleInfoClass = ExportCellStyleInfo.class;
-			Class<CellStyle> styleClass = CellStyle.class; 
-			Class<ExportCellStyle> styleAnnoClass = ExportCellStyle.class;
-			
-			Class<ExportFontStyleInfo> fontStyleInfoClass = ExportFontStyleInfo.class;
-			Class<ExportFontStyle> fontAnnoClass = ExportFontStyle.class;
-			Class<Font> fontClass = Font.class;
-			
-			initCacheMap(cellStyleInfoClass,styleClass, styleAnnoClass,cellStyleMethodMap,
-							cellAnno2InfoMap);
-			
-			initCacheMap(fontStyleInfoClass, fontClass, fontAnnoClass, fontStyleMethodMap, 
-							fontAnno2InfoMap);
-			Map<String,Map<Method,Method>> cellNameMap = new HashMap<String,Map<Method,Method>>(4);
-			cellNameMap.put(ANNO_KEY, cellAnno2InfoMap);
-			cellNameMap.put(STYLE_KEY, cellStyleMethodMap);
-			Map<String,Map<Method,Method>> fontNameMap = new HashMap<String,Map<Method,Method>>(4);
-			fontNameMap.put(ANNO_KEY, fontAnno2InfoMap);
-			fontNameMap.put(STYLE_KEY, fontStyleMethodMap);
-			classInfoCache = new HashMap<Class<?>,Map<String,Map<Method,Method>>>();
-			classInfoCache.put(cellStyleInfoClass, cellNameMap);
-			classInfoCache.put(fontStyleInfoClass, fontNameMap);
-			
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
-		}		
-	}
-	
-	private static void initCacheMap(Class<?> infoClass,
-			Class<?> styleClass, Class<?> annoClass,
-			Map<Method,Method> styleMethodMap, Map<Method,Method> anno2InfoMap)
-			throws NoSuchMethodException {
-		Method[] methods = styleClass.getMethods();			
-		Map<String,Method> map = new HashMap<String,Method>();
-		for(Method method : methods){
-			map.put(method.getName(), method);
-		}
-		
-		Field[] fields = infoClass.getDeclaredFields();
-		for(Field field : fields){
-			String fieldName = field.getName();
-			if("fontStyleInfo".equals(fieldName)){
-				continue;
-			}
-			String getMethodName = GET_METHOD_PREFIX + fieldName.substring(0, 1).toUpperCase() 
-										+ fieldName.substring(1, fieldName.length());
-			
-			String setMethodName = SET_METHOD_PREFIX + fieldName.substring(0, 1).toUpperCase() 
-					+ fieldName.substring(1, fieldName.length());
-			Method infoGetMethod = infoClass.getMethod(getMethodName);
-			Method infoSetMethod = infoClass.getMethod(setMethodName, field.getType());
-			Method annoMethod = annoClass.getMethod(fieldName);
-			styleMethodMap.put(infoGetMethod, map.get(setMethodName));
-			anno2InfoMap.put(annoMethod, infoSetMethod);
-		}
+	public static <T> Workbook exportExcel07(Class<T> clazz, List<T> list) {
+		return exportExcel07(clazz, list, false);
 	}
 	
 	/**
@@ -171,20 +69,37 @@ public class ExcelExportUtil {
 	 * 需要手动删除，默认为false 
 	 * @return
 	 */
-	public static <T> Workbook exportExcel07(Class<T> clazz, List<T> list,boolean quickModel) {
-		return exportExcel(clazz, list, ExcelFileType.XLSX, null ,null ,true);
+	public static <T> Workbook exportExcel07(Class<T> clazz, List<T> list, boolean xlsxQuickMode){
+		
+		return exportExcel07(clazz, list,null, xlsxQuickMode);
 	}
 	
-	/**
-	 * @param clazz 要导出的类
-	 * @param list 导出的数据
-	 * @return
-	 */
-	public static <T> Workbook exportExcel07(Class<T> clazz, List<T> list) {
-		return exportExcel(clazz, list, ExcelFileType.XLSX, null);
+	public static <T> Workbook exportExcel07(Class<T> clazz, List<T> list , 
+			Map<String,String> staticRowData){
+		
+		return exportExcel07(clazz, list, staticRowData, false);
 	}
 	
+	public static <T> Workbook exportExcel07(Class<T> clazz, List<T> list , 
+			Map<String,String> staticRowData, boolean xlsxQuickMode){
+		
+		return exportExcel07(clazz, list, staticRowData, null, xlsxQuickMode);
+	}
 	
+	public static <T> Workbook exportExcel07(Class<T> clazz, List<T> list ,
+			Map<String,String> staticRowData, Workbook workbook){
+		return exportExcel07(clazz, list,staticRowData, workbook, false);
+	}
+	
+	public static <T> Workbook exportExcel07(Class<T> clazz, List<T> list ,
+					Map<String,String> staticRowData, Workbook workbook, boolean xlsxQuickMode){
+		return exportExcel(clazz, list, ExcelFileType.XLSX, staticRowData, workbook, xlsxQuickMode);
+	}
+	
+	//----------------------------07
+	
+	
+	//----------------------------03
 	/**
 	 * @param clazz 要导出的类
 	 * @param list 导出的数据
@@ -212,16 +127,18 @@ public class ExcelExportUtil {
 	 * @return
 	 */
 	public static <T> Workbook exportExcel03(Class<T> clazz, List<T> list){
-		return exportExcel(clazz, list, ExcelFileType.XLS, null);
+		return exportExcel(clazz, list, ExcelFileType.XLS);
 	}
+	//---------------------------03
 	
 	
 	
-	public static <T> Workbook exportExcel(Class<T> clazz, List<T> list ,ExcelFileType type) {
+	private static <T> Workbook exportExcel(Class<T> clazz, List<T> list, ExcelFileType type) {
 		return exportExcel(clazz, list, type, null);
 	}
 	
-	public static <T> Workbook exportExcel(Class<T> clazz, List<T> list , ExcelFileType type,Map<String,String> staticRowData ){	
+	private static <T> Workbook exportExcel(Class<T> clazz, List<T> list, ExcelFileType type, 
+			Map<String, String> staticRowData ){	
 		return exportExcel(clazz, list, type, staticRowData, null,false);
 	}
 	
@@ -235,7 +152,8 @@ public class ExcelExportUtil {
 	 * 需要手动删除，默认为false 
 	 * @return 工作簿
 	 */
-	public static <T> Workbook exportExcel(Class<T> clazz, List<T> list , ExcelFileType type,Map<String,String> staticRowData , Workbook workbook,boolean xlsxQuickMode) {	
+	private static <T> Workbook exportExcel(Class<T> clazz, List<T> list , ExcelFileType type, 
+					Map<String, String> staticRowData , Workbook workbook, boolean xlsxQuickMode) {	
 		if(clazz == null){
 			return null;
 		}
@@ -273,8 +191,8 @@ public class ExcelExportUtil {
 		int dataRowNum = exportInfo.getDataRow();
 		dataRowNum = dataRowNum > exportInfo.getHeadRow() + exportInfo.getHeadRowCount() ? 
 						dataRowNum : exportInfo.getHeadRow() + exportInfo.getHeadRowCount();
-		Map<Field,CellStyle> headCellStyleMap = createStyleMap(workbook,exportInfo,true);
-		Map<Field,CellStyle> dataCellStyleMap = createStyleMap(workbook,exportInfo,false);
+		Map<Field,CellStyle> headCellStyleMap = CellStyleUtils.createStyleMap(workbook,exportInfo,true);
+		Map<Field,CellStyle> dataCellStyleMap = CellStyleUtils.createStyleMap(workbook,exportInfo,false);
 
 		List<Field> availableFields = new ArrayList<Field>();
 		setAvailableFileds(exportInfo.getSortableFields() , availableFields);
@@ -318,6 +236,16 @@ public class ExcelExportUtil {
 		
 		return workbook;
 	}
+	
+	
+	private static ExportInfo initTargetClass(Class<?> clazz)
+			throws IntrospectionException {
+		ExportInfo exportInfo = ExcelUtils.getExportInfo(clazz);		
+		synchronized (infoMap) {
+			infoMap.put(clazz, exportInfo);				
+		}
+		return exportInfo;
+	}
 
 	private static void setAvailableFileds(List<SortableField> sortableFields, List<Field> availableFields) {
 		for (SortableField sortField : sortableFields) {
@@ -330,79 +258,6 @@ public class ExcelExportUtil {
 			}
 		}
 		
-	}
-
-	/** 根据缓存信息创建CellStyle
-	 * @param workbook 工作簿
-	 * @param exportInfo 缓存信息
-	 * @param isHead 是否表头样式
-	 * @return
-	 */
-	private static Map<Field, CellStyle> createStyleMap(Workbook workbook,ExportInfo exportInfo,boolean isHead) {
-		Map<Field, CellStyle> styleMap;	
-		styleMap = doCreateStyleMap(workbook, exportInfo, isHead);
-		return styleMap == null ? null : styleMap;
-	}
-
-
-	/** 实际创建CellStyle Map
-	 * @param workbook
-	 * @param exportInfo
-	 * @param isHead
-	 * @return
-	 */
-	private static Map<Field, CellStyle> doCreateStyleMap(Workbook workbook, ExportInfo exportInfo,boolean isHead) {
-		Map<ExportCellStyleInfo, CellStyle> tempCacheMap = new HashMap<ExportCellStyleInfo, CellStyle>();
-		Map<Field, CellStyle> styleMap = new HashMap<Field, CellStyle>();
-		CellStyle style;
-		for(Map.Entry<Field,ExportFieldInfo> entry : exportInfo.getFieldInfoMap().entrySet()){
-			ExportCellStyleInfo styleInfo ;
-			if(isHead){
-				styleInfo = entry.getValue().getHeadStyle();
-			}else{
-				styleInfo = entry.getValue().getDataStyle();
-			}
-			if(!StringUtils.isEmpty(entry.getValue().getDataFormat())){
-				//当存在格式化时，即使是来自通用的样式，但是格式不一样，所以需要new专属格式的样式
-				//由于格式化属于专属，因此也不需要放到临时缓存map之中
-				style = doCreateCellStyle(workbook,styleInfo,entry.getValue().getDataFormat());			
-			}else{
-				style = tempCacheMap.get(styleInfo);
-				if(style == null){
-					style = doCreateCellStyle(workbook,styleInfo,null);
-					tempCacheMap.put(styleInfo, style);
-				}
-			}
-			if(style != null ){
-				styleMap.put(entry.getKey(),style);						
-			}				
-		}
-		tempCacheMap.clear();
-		return styleMap.isEmpty() ? null : styleMap;
-	}
-
-	/** 创建每个CellStyle，并放到map之中
-	 * @param workbook
-	 * @param styleInfo
-	 * @param dataFormat 
-	 * @return
-	 */
-	private static CellStyle doCreateCellStyle(Workbook workbook,ExportCellStyleInfo styleInfo,String dataFormat) {
-		if(styleInfo != null ){
-			CellStyle cellStyle = workbook.createCellStyle();
-			setStyleValue(ExportCellStyleInfo.class, cellStyle, styleInfo);
-			if(styleInfo.getFontStyleInfo() != null){
-				Font fontStyle = workbook.createFont();
-				setStyleValue(ExportFontStyleInfo.class, fontStyle, styleInfo.getFontStyleInfo());
-				cellStyle.setFont(fontStyle);
-			}
-			if(!StringUtils.isEmpty(dataFormat)){
-				short format = workbook.createDataFormat().getFormat(dataFormat);
-				cellStyle.setDataFormat(format);
-			}
-			return cellStyle;
-		}
-		return null;
 	}
 
 	private static <T> void setStaticRows(ExportInfo exportInfo, Map<String, String> staticRowData, Workbook workbook,
@@ -448,7 +303,7 @@ public class ExcelExportUtil {
 					}
 					row.setHeightInPoints(rowCellInfo.getRowHightInPoint());
 					if(rowCellInfo.getCellStyleInfo() != null){
-						CellStyle style = doCreateCellStyle(workbook, rowCellInfo.getCellStyleInfo(), null);
+						CellStyle style = CellStyleUtils.doCreateCellStyle(workbook, rowCellInfo.getCellStyleInfo(), null);
 						cell.setCellStyle(style);
 					}
 					if(value.matches(REGEX)){
@@ -536,8 +391,6 @@ public class ExcelExportUtil {
 	}
 
 
-
-
 	private static void doCreateSheetHeadRow(Map<Field, ExportFieldInfo> fieldInfoMap,
 			Map<Field, CellStyle> headCellStyleMap, Sheet sheet, List<SortableField> fieldList, int rowNum, int cellNum,
 			int headRowCount , short hightInPonit) {
@@ -577,6 +430,13 @@ public class ExcelExportUtil {
 		}
 	}
 
+	/** 创建不需要合并单元格的表头
+	 * @param fieldInfoMap
+	 * @param headCellStyleMap
+	 * @param row
+	 * @param fieldList
+	 * @param cellNum
+	 */
 	private static void doCreateSheetSingleHeadRow(Map<Field, ExportFieldInfo> fieldInfoMap,
 			Map<Field, CellStyle> headCellStyleMap, Row row, List<SortableField> fieldList, int cellNum) {
 		
@@ -605,223 +465,6 @@ public class ExcelExportUtil {
 			}
 		}
 		return count;
-	}
-	private static ExportInfo initTargetClass(Class<?> clazz)
-			throws IntrospectionException {
-		ExportInfo exportInfo ;
-		int headRowNum = DEFAULT_HEAD_ROW ; 
-		int dataRowNum = DEFAULT_DATA_ROW ;
-		String sheetName = DEFAULT_SHEET_NAME;
-		int maxSheetSize = XLXS_MAX_SHEET_SIZE;
-		
-		short dataHightInPoint = DEFAULT_HIGHT_IN_POINT;
-		short headHightInPoint = DEFAULT_HIGHT_IN_POINT;
-		
-		if(clazz.isAnnotationPresent(Excel.class)){
-			Excel excel = clazz.getAnnotation(Excel.class);
-			dataRowNum = excel.dataRow();
-			headRowNum = excel.headRow();
-			sheetName = excel.sheetName();
-			maxSheetSize = excel.sheetSize();
-			sheetName = StringUtils.isEmpty(sheetName) ? DEFAULT_SHEET_NAME : sheetName;
-		}
-		
-		ExportCellStyleInfo globalHeadStyleInfo = null;
-		ExportCellStyleInfo globalDataStyleInfo = null;
-		//
-		if(clazz.isAnnotationPresent(ExportStyle.class)){
-			ExportStyle exportStyle = clazz.getAnnotation(ExportStyle.class);
-			globalDataStyleInfo = createExportCellStyleInfo(exportStyle.dataStyle());
-			globalHeadStyleInfo = createExportCellStyleInfo(exportStyle.headStyle());
-			if(globalDataStyleInfo == null && exportStyle.dataEqHead()){
-				globalDataStyleInfo = globalHeadStyleInfo;
-			}
-			dataHightInPoint = exportStyle.dataHightInPoint();
-			headHightInPoint = exportStyle.headHightInPoint();
-		}
-		if(clazz.isAnnotationPresent(HeadStyle.class)){
-			HeadStyle headStyle = clazz.getAnnotation(HeadStyle.class);
-			globalHeadStyleInfo = createExportCellStyleInfo(headStyle.value());
-			headHightInPoint = headStyle.hightInPoint();
-		}
-		
-		if(clazz.isAnnotationPresent(DataStyle.class)){
-			DataStyle dataStyle = clazz.getAnnotation(DataStyle.class);
-			globalDataStyleInfo = createExportCellStyleInfo(dataStyle.value());
-			dataHightInPoint = dataStyle.hightInPoint();
-		}
-		
-		Map<Field,ExportFieldInfo> fieldInfoMap = new HashMap<Field,ExportFieldInfo>();
-		//获取所有字段，包括父类字段
-		List<Field> fieldList = getAllFieldFromClass(clazz);
-		List<SortableField> sortFieldList = new ArrayList<SortableField>(fieldList.size());
-		//递归创建Filed对应信息，并统计表头层数
-		int count = createFieldInfo(clazz, globalHeadStyleInfo, globalDataStyleInfo, fieldInfoMap, fieldList,
-				sortFieldList,null,0);
-		//
-		exportInfo = new ExportInfo(sheetName, headRowNum, dataRowNum, 
-							fieldInfoMap,sortFieldList);
-		exportInfo.setHeadRowCount(count);
-		exportInfo.setMaxSheetSize(maxSheetSize);
-		exportInfo.setDataHightInPoint(dataHightInPoint);
-		exportInfo.setHeadHightInPoint(headHightInPoint);
-		setStaticRowCellInfo(clazz,exportInfo);
-		synchronized (infoMap) {
-			infoMap.put(clazz, exportInfo);				
-		}
-		return exportInfo;
-	}
-
-	private static void setStaticRowCellInfo(Class<?> clazz, ExportInfo exportInfo) {
-		if(clazz.isAnnotationPresent(StaticExcelRow.class)){
-			StaticExcelRow staticRows = clazz.getAnnotation(StaticExcelRow.class);
-			StaticExcelRowCellInfo staticExcelRowCellInfo = null;
-			if(staticRows.cells().length > 0 ){
-				ExcelRowCell[] cells = staticRows.cells();
-				ExcelRowCellInfo[] rowCellInfos = new ExcelRowCellInfo[cells.length];
-				int i = 0;
-				for(ExcelRowCell rowCell : cells ){
-					boolean single = rowCell.isSingle();
-					boolean autoCol = rowCell.autoCol();
-					int startRow = rowCell.startRow();
-					int endRow = rowCell.endRow();
-					int startCol = rowCell.startCol();
-					int endCol = rowCell.endCol();
-					String value = rowCell.value();
-					short rowHightInPoint = rowCell.rowHightInPoint();
-					ExportCellStyleInfo cellStyleInfo = createExportCellStyleInfo(rowCell.cellStyle());
-					ExcelRowCellInfo rowCellInfo = new ExcelRowCellInfo(value, single, autoCol, startRow, endRow, 
-														startCol, endCol, rowHightInPoint, cellStyleInfo);
-					rowCellInfos[i++] = rowCellInfo;
-				}
-				staticExcelRowCellInfo = new StaticExcelRowCellInfo(rowCellInfos);
-			}
-			exportInfo.setStaticExcelRowCellInfo(staticExcelRowCellInfo);
-		}
-		
-	}
-
-	private static List<Field> getAllFieldFromClass(Class<?> clazz) {
-		List<Field> fieldList = new ArrayList<Field>();
-		Class<?> c = clazz;
-		while(!Object.class.equals(c)){
-			fieldList.addAll(Arrays.asList(c.getDeclaredFields()));
-			c = c.getSuperclass();
-		}
-		return fieldList;
-	}
-
-	private static int createFieldInfo(Class<?> clazz, ExportCellStyleInfo parentHeadStyle,
-			ExportCellStyleInfo parentDataStyle, Map<Field, ExportFieldInfo> fieldInfoMap,
-			List<Field> fieldList, List<SortableField> sortFieldList,
-			List<Method> parentMethods,int count)
-			throws IntrospectionException {
-		for(int i = 0 ; i < fieldList.size() ; i++){
-			Field field = fieldList.get(i);
-			if(field.isAnnotationPresent(IgnoreField.class)){
-				continue;
-			}
-			List<Method> methodChain = new ArrayList<Method>(1);
-			if(parentMethods != null){
-				methodChain.addAll(parentMethods);			
-			}
-			String name = field.getName();
-			PropertyDescriptor pd = new PropertyDescriptor(name, clazz);
-			Method getMethod = pd.getReadMethod();
-			methodChain.add(getMethod);
-			
-			//获取字段的注解信息
-			int sort = DEFAULT_SORT;
-			ExportFieldInfo fieldInfo = new ExportFieldInfo(name);
-			if(field.isAnnotationPresent(ExcelField.class)){
-				ExcelField excelField = field.getAnnotation(ExcelField.class);
-				sort = excelField.sort();
-				setExcelFieldInfo(fieldInfo,excelField);
-			}
-			
-			//读取style相关信息
-			ExportCellStyleInfo fieldHeadStyleInfo = null;
-			ExportCellStyleInfo fieldDataStyleInfo = null;		
-			boolean required = StringUtils.isEmpty(fieldInfo.getDataFormat()) ? false : true;
-			if(field.isAnnotationPresent(ExportStyle.class)){
-				ExportStyle fieldExportStyle = field.getAnnotation(ExportStyle.class);
-				fieldHeadStyleInfo = createExportCellStyleInfo(fieldExportStyle.headStyle());
-				fieldDataStyleInfo = createExportCellStyleInfo(fieldExportStyle.dataStyle());
-				if(fieldDataStyleInfo == null && fieldExportStyle.dataEqHead()){
-					fieldDataStyleInfo = fieldHeadStyleInfo;
-				}
-			}
-			if(field.isAnnotationPresent(HeadStyle.class)){
-				HeadStyle headStyle = field.getAnnotation(HeadStyle.class);
-				fieldHeadStyleInfo = createExportCellStyleInfo(headStyle.value());
-			}
-			
-			if(field.isAnnotationPresent(DataStyle.class)){
-				DataStyle dataStyle = field.getAnnotation(DataStyle.class);
-				fieldDataStyleInfo = createExportCellStyleInfo(dataStyle.value());
-			}
-			fieldDataStyleInfo = fieldDataStyleInfo != null ? fieldDataStyleInfo : parentDataStyle;
-			fieldHeadStyleInfo = fieldHeadStyleInfo != null ? fieldHeadStyleInfo :parentHeadStyle;
-			//存在dataFormat时，必须创建样式
-			if(fieldDataStyleInfo == null  && required){
-				fieldDataStyleInfo = new ExportCellStyleInfo();
-			}
-			
-			fieldInfo.setMethodChain(methodChain);
-			fieldInfo.setHeadStyle(fieldHeadStyleInfo);
-			fieldInfo.setDataStyle(fieldDataStyleInfo);
-			fieldInfoMap.put(field, fieldInfo);
-			
-			List<SortableField> list = null;
-			if(!ClassUtils.isSimpleType(field.getType())){
-				list = new ArrayList<SortableField>();
-				int temp = createFieldInfo(field.getType(), fieldHeadStyleInfo, fieldDataStyleInfo, 
-						fieldInfoMap, getAllFieldFromClass(field.getType()), 
-						list, methodChain,count+1);
-				count = count > temp ? count : temp;
-			}
-			//每个类的字段
-			sortFieldList.add(new SortableField(sort, field,list));		
-		}
-		//对每个类的字段进行排序
-		Collections.sort(sortFieldList, new SortComparator());
-		return count;
-	}
-
-	private static void setExcelFieldInfo(ExportFieldInfo fieldInfo,
-			ExcelField excelField) {
-		if(!"".equals(excelField.headName())){
-			fieldInfo.setHeadName(excelField.headName());
-		}
-		
-		if(!"".equals(excelField.dataFormat())){
-			fieldInfo.setDataFormat(excelField.dataFormat());
-		}
-		
-		if(!"".equals(excelField.dateFormat())){
-			fieldInfo.setDateFormat(excelField.dateFormat());
-		}
-		
-		if(DataType.None !=excelField.dataType()){
-			fieldInfo.setDataType(excelField.dataType());
-		}
-		
-		if(-1 != excelField.width()){
-			fieldInfo.setWidth(excelField.width());
-		}
-		if(!excelField.autoWidth()){
-			fieldInfo.setAutoWidth(excelField.autoWidth());
-		}
-		if(excelField.exportProcessor() != Void.class && 
-				ExportProcessor.class.isAssignableFrom(excelField.exportProcessor())){
-			Class<?> clazz = excelField.exportProcessor();
-			try {
-				ExportProcessor exportProcessor = (ExportProcessor) clazz.newInstance();
-				fieldInfo.setExportProcessor(exportProcessor);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-		}
 	}
 
 	/** 给cell设置值ֵ
@@ -876,6 +519,12 @@ public class ExcelExportUtil {
 	}
 	
 	
+	/** 设置超链接属性
+	 * @param cell
+	 * @param processor
+	 * @param returnVal
+	 * @param current
+	 */
 	private static void setHyperlink(Cell cell, LinkProcessor processor, Object returnVal, Object current) {
 		int linkType = 0 ;		
 		String prefix = "";
@@ -909,49 +558,4 @@ public class ExcelExportUtil {
 		cell.setHyperlink(hyperlink);
 	}
 
-	private static ExportCellStyleInfo createExportCellStyleInfo(ExportCellStyle annoCellStyle){
-		ExportFontStyle annoFontStyle = annoCellStyle.fontStyle();
-		ExportFontStyleInfo fontStyleInfo = getExportInfo(ExportFontStyleInfo.class, annoFontStyle);
-		ExportCellStyleInfo cellStyleInfo;
-		if(fontStyleInfo  != null){
-			cellStyleInfo = getExportInfo(ExportCellStyleInfo.class, annoCellStyle);
-			cellStyleInfo.setFontStyleInfo(fontStyleInfo);
-		}else{
-			cellStyleInfo = getExportInfo(ExportCellStyleInfo.class, annoCellStyle);;			
-		}
-		return cellStyleInfo;
-
-	}
-	
-	public static <T> T getExportInfo(Class<T> clazz,Object annotation){
-		T t = null;
-		try {
-			t = clazz.newInstance();
-
-			Map<Method, Method> anno2InfoMap = classInfoCache.get(clazz).get(ANNO_KEY);
-			for (Map.Entry<Method, Method> entry : anno2InfoMap.entrySet()) {
-				Method annoMethod = entry.getKey();
-				Object value = annoMethod.invoke(annotation);
-				entry.getValue().invoke(t, value);
-			}
-		} catch (Exception e) {
-			LOG.error("创建ExportCellStyleInfo出错");
-			e.printStackTrace();
-		}
-		return t;
-	}
-
-	public static <T> void setStyleValue(Class<T> clazz,Object style, Object info) {
-		try {
-			Map<Method, Method> styleMethodMap = classInfoCache.get(clazz).get(STYLE_KEY);
-			for(Map.Entry<Method, Method> entry : styleMethodMap.entrySet()){
-				Object value = entry.getKey().invoke(info);
-				if(value != null ){
-					entry.getValue().invoke(style, value);
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		} 
-	}
 }

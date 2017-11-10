@@ -39,6 +39,7 @@ public class ExcelReturnValueHandler implements HandlerMethodReturnValueHandler 
 			NativeWebRequest webRequest) throws Exception {
 		BufferedOutputStream bos = null;
 		Workbook workbook = null;
+		mavContainer.setRequestHandled(true);
 		try {
 			String suffix = ".xls";
 			ExcelFile excelFile = returnType.getMethodAnnotation(ExcelFile.class);
@@ -65,7 +66,6 @@ public class ExcelReturnValueHandler implements HandlerMethodReturnValueHandler 
 			bos = new BufferedOutputStream(resp.getOutputStream());
 			workbook.write(bos);
 			bos.flush();
-			mavContainer.setRequestHandled(true);
 		} catch (Exception e) {
 			throw e;
 		}finally {

@@ -1,10 +1,8 @@
 package me.qinmian.util;
 
 import java.beans.IntrospectionException;
-import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,20 +21,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
-import me.qinmian.annotation.Excel;
-import me.qinmian.annotation.ExcelField;
 import me.qinmian.bean.ImportFieldInfo;
 import me.qinmian.bean.ImportInfo;
-import me.qinmian.bean.inter.ImportProcessor;
 import me.qinmian.emun.ExcelFileType;
 
 public  class ExcelImportUtil {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ExcelExportUtil.class);
-	
-	private final static int DEFAULT_DATA_ROW = 1;
-	
-	private final static int DEFAULT_HEAD_ROW = 0;
 	
 	private final static DataFormatter DATA_FORMATTER = new DataFormatter();
 	
@@ -56,8 +47,7 @@ public  class ExcelImportUtil {
 		list.addAll(importExcel(fileName, inputStream, clazz).getDataMap().values());
 		return list;
 	}
-	
-	
+		
 	/**
 	 * @param clazz pojo对应class
 	 * @param fileType  excle文件类型
@@ -116,7 +106,6 @@ public  class ExcelImportUtil {
 		}
 		return workbook;
 	}
-	
 	
 	private static ExcelFileType getFileType(String fileName) {
 		if("xls".equalsIgnoreCase(fileName.substring(fileName.lastIndexOf(".")+1))){
@@ -184,6 +173,12 @@ public  class ExcelImportUtil {
 		return new ImportResult<T>(suceess, fail, dataMap.isEmpty() ? null : dataMap, errorRows.isEmpty() ? null : errorRows);
 	}
 	
+	/** 根据获取的的数据执行set方法
+	 * @param obj
+	 * @param fieldInfo
+	 * @param value
+	 * @throws Exception
+	 */
 	private static void invoke(Object obj, ImportFieldInfo fieldInfo, Object value) throws Exception {
 		List<Method> getMethodChain = fieldInfo.getGetMethodChain();
 		List<Class<?>> typeChain = fieldInfo.getTypeChain();
@@ -206,6 +201,11 @@ public  class ExcelImportUtil {
 	}
 
 
+	/** 获取表头名
+	 * @param sheet
+	 * @param headRow
+	 * @return
+	 */
 	private static List<String> createHeadNameList(Sheet sheet ,int headRow){
 		List<String> headNameList;
 		Row row;
@@ -227,80 +227,26 @@ public  class ExcelImportUtil {
 		return headNameList;
 	}
 
-	private static <T> void initTargetClass(Class<T> clazz)
+	/** 根据对象class初始化对应信息
+	 * @param clazz
+	 * @return
+	 * @throws IntrospectionException
+	 */
+	private static <T> ImportInfo initTargetClass(Class<T> clazz)
 			throws IntrospectionException {
-		Integer headNum = DEFAULT_HEAD_ROW;
-		Integer dataNum = DEFAULT_DATA_ROW;
-		Map<String, ImportFieldInfo> fieldInfoMap;
-		if(clazz.isAnnotationPresent(Excel.class)){
-			Excel excel = clazz.getAnnotation(Excel.class);
-			if(excel != null ){
-				dataNum = excel.dataRow();
-				headNum = excel.headRow();
-			}			
-		}
-		List<Field> fields = ClassUtils.getAllFieldFromClass(clazz);
-		fieldInfoMap = new HashMap<String, ImportFieldInfo>();
-		List<Class<?>> classChain = new ArrayList<Class<?>>();
-		classChain.add(clazz);
-		createFieldInfo(classChain, null , null ,fieldInfoMap, fields);		
+		ImportInfo importInfo = ExcelUtils.getImportInfo(clazz);
 		synchronized(importInfoMap){
-			importInfoMap.put(clazz, new ImportInfo(dataNum,headNum,fieldInfoMap));			
+			importInfoMap.put(clazz, importInfo);			
 		}
-	}
-
-	private static  void createFieldInfo(List<Class<?>> clazzChain, List<Method> setMethodChain, List<Method> getMethodChain ,
-			Map<String, ImportFieldInfo> fieldInfoMap, List<Field> fields) throws IntrospectionException {
-		Class<?> currentClazz = clazzChain.get(clazzChain.size()-1);
-		for(Field field :fields){
-			String name = field.getName();
-			PropertyDescriptor pd = new PropertyDescriptor(name, currentClazz);
-			Method setMethod = pd.getWriteMethod();
-			List<Method> currentSetMethodChain = new ArrayList<Method>();
-			if(setMethodChain != null && !setMethodChain.isEmpty()){
-				currentSetMethodChain.addAll(setMethodChain);
-			}
-			currentSetMethodChain.add(setMethod);
-			//clazzChain初始化就不为空
-			List<Class<?>> currentClassChain = new ArrayList<Class<?>>(clazzChain);
-			currentClassChain.add(field.getType());
-			if(ClassUtils.isSimpleType(field.getType())){
-				boolean required = false;
-				String dateFormat = null ;
-				ImportProcessor processor = null;
-				if(field.isAnnotationPresent(ExcelField.class)){
-					ExcelField excelField = field.getAnnotation(ExcelField.class);
-					if(!"".equals(excelField.headName())){
-						name = excelField.headName();
-					}
-					required = excelField.required();
-					dateFormat = excelField.dateFormat();
-					Class<?> processorClazz = excelField.importProcessor();
-					if(processorClazz != Void.class && 
-							ImportProcessor.class.isAssignableFrom(processorClazz)){
-						try {
-							processor = (ImportProcessor) processorClazz.newInstance();
-						} catch (Exception e) {
-							throw new RuntimeException(e);
-						}
-					}
-				}
-				fieldInfoMap.put(name, new ImportFieldInfo(currentClassChain,currentSetMethodChain
-						,getMethodChain,required,dateFormat,processor));				
-			}else{
-				
-				List<Method> currentGetMehtodChain = new ArrayList<Method>();
-				if(getMethodChain != null && !getMethodChain.isEmpty()){
-					currentGetMehtodChain.addAll(getMethodChain);
-				}
-				currentGetMehtodChain.add(pd.getReadMethod());
-				createFieldInfo(currentClassChain, currentSetMethodChain, currentGetMehtodChain, fieldInfoMap, 
-								ClassUtils.getAllFieldFromClass(field.getType()));
-			}
-			
-		}
+		return importInfo;
 	}
 	
+	/** 从表格之中读取数据并进行处理
+	 * @param fieldInfo 
+	 * @param cell 当前cell
+	 * @return
+	 * @throws Exception
+	 */
 	public  static Object getValue(ImportFieldInfo fieldInfo, Cell cell) throws Exception{
 		int size = fieldInfo.getTypeChain().size();
 		Class<?> type = fieldInfo.getTypeChain().get(size - 1);

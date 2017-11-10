@@ -11,7 +11,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.junit.Test;
 
-import me.qinmian.emun.ExcelFileType;
 import me.qinmian.test.bean.Role;
 import me.qinmian.test.bean.StudentEntity;
 import me.qinmian.util.ExcelExportUtil;
@@ -25,7 +24,7 @@ public class TestStudent {
 		List<StudentEntity> list = getData();
 		Workbook workbook = null;
 		long start = System.currentTimeMillis();
-		workbook = ExcelExportUtil.exportExcel(StudentEntity.class,list,ExcelFileType.XLS,null,null,false);
+		workbook = ExcelExportUtil.exportExcel03(StudentEntity.class, list);
 //		list = getData();
 //		workbook = ExcelExportUtil.exportExcel(UserPlus.class,list,ExcelFileType.XLSX,map,workbook,true);
 		long end = System.currentTimeMillis();
@@ -37,7 +36,7 @@ public class TestStudent {
 		
 		list = getData();
 		long start1 = System.currentTimeMillis();
-		workbook = ExcelExportUtil.exportExcel(StudentEntity.class,list, ExcelFileType.XLS,null,null,false);
+		workbook = ExcelExportUtil.exportExcel03(StudentEntity.class, list);
 		long end1 = System.currentTimeMillis();
 		System.out.println("耗时：" + (end1-start1) + "毫秒");	
 		System.out.println("****************************");

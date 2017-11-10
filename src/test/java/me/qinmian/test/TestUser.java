@@ -14,7 +14,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.junit.Test;
 
-import me.qinmian.emun.ExcelFileType;
 import me.qinmian.test.bean.Role;
 import me.qinmian.test.bean.UserPlus;
 import me.qinmian.util.ExcelExportUtil;
@@ -36,7 +35,7 @@ public class TestUser {
 		//分两次写入20w条数据
 		List<UserPlus> list;
 		for(int i = 0 ; i < 2 ; i++){
-			list = getData(i*100000);
+			list = getData(i*100000, 100000);
 			workbook = ExcelExportUtil.exportExcel03(UserPlus.class, list, map,workbook);
 			
 		}
@@ -54,7 +53,7 @@ public class TestUser {
 	@Test
 	public void separateSheet() throws IOException {
 		//获取10w条数据
-		List<UserPlus> list = getData(0);
+		List<UserPlus> list = getData(0, 100000);
 		Map<String, String> map = new HashMap<String,String>();
 		map.put("msg", "用户信息导出报表");
 		map.put("status", "导出成功");
@@ -69,16 +68,37 @@ public class TestUser {
 	}
 	
 	@Test
+	public void testExcel07() throws IOException{
+		List<UserPlus> list = getData(0, 20000);
+		Map<String, String> map = new HashMap<String,String>();
+		map.put("msg", "用户信息导出报表");
+		map.put("status", "导出成功");
+		long start = System.currentTimeMillis();
+		Workbook workbook = ExcelExportUtil.exportExcel07(UserPlus.class, list, map, true);
+		long end = System.currentTimeMillis();
+		System.out.println("耗时：" + (end - start ) + "毫秒");
+		FileOutputStream outputStream = new FileOutputStream("D:/test/user.xlsx");
+		workbook.write(outputStream);
+		if(SXSSFWorkbook.class.equals(workbook.getClass())){
+			SXSSFWorkbook wb = (SXSSFWorkbook)workbook;
+			wb.dispose();
+		}
+		outputStream.flush();
+		outputStream.close();
+	}
+	
+	
+	@Test
 	public void exportExcel() throws FileNotFoundException, Exception {
 		File file = new File("D:/test/test/test4.xls");
 		FileOutputStream outputStream = new FileOutputStream(file);
-		List<UserPlus> list = getData(0);
+		List<UserPlus> list = getData(0, 50000);
 		Map<String,String> map = new HashMap<String,String>();
 		map.put("msg", "来自星星的你的说得好的");
 		map.put("status", "显示成功");
 		Workbook workbook = null;
 		long start = System.currentTimeMillis();
-		workbook = ExcelExportUtil.exportExcel(UserPlus.class,list,ExcelFileType.XLS,map,null,false);
+		workbook = ExcelExportUtil.exportExcel03(UserPlus.class, list, map);
 //		list = getData(1798);
 //		workbook = ExcelExportUtil.exportExcel(UserPlus.class,list,ExcelFileType.XLS,map,workbook,false);
 		long end = System.currentTimeMillis();
@@ -87,9 +107,9 @@ public class TestUser {
 		workbook.write(outputStream);
 		list.clear();
 		
-		list = getData(544);
+		list = getData(544, 50000);
 		long start1 = System.currentTimeMillis();
-		workbook = ExcelExportUtil.exportExcel(UserPlus.class,list, ExcelFileType.XLS,map,null,false);
+		workbook = ExcelExportUtil.exportExcel03(UserPlus.class, list, map);
 		long end1 = System.currentTimeMillis();
 		System.out.println("耗时：" + (end1-start1) + "毫秒");		
 		FileOutputStream out = new FileOutputStream("D:/test/test/test33.xls");
@@ -112,9 +132,9 @@ public class TestUser {
 	 * @param start
 	 * @return
 	 */
-	private static List<UserPlus> getData(int start) {
+	private static List<UserPlus> getData(int start , int total) {
 		List<UserPlus> list = new ArrayList<UserPlus>();
-		for(int i = start ; i < 100000 + start ; i++){
+		for(int i = start ; i < total + start ; i++){
 			UserPlus user = new UserPlus();
 			user.setAddress("深圳"+i);
 			user.setEmail("111qq"+ i + "@qq.com");
