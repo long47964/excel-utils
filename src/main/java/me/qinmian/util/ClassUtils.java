@@ -24,8 +24,7 @@ public class ClassUtils {
 	public static boolean isSimpleType(Class<?> clazz){
 		return CharSequence.class.isAssignableFrom(clazz) || Boolean.class == clazz 
 				||Number.class.isAssignableFrom(clazz)
-				|| Date.class == clazz || char.class == clazz|| boolean.class == clazz
-				|| isBaseNumberType(clazz);
+				|| Date.class == clazz || clazz.isPrimitive();
 	}
 	
 	
