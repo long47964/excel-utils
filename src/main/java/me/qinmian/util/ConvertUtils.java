@@ -67,8 +67,10 @@ public class ConvertUtils {
 		}
 		SimpleDateFormat simpleDateFormat = formatMap.get(dateFormat);
 		if(simpleDateFormat == null){
-			simpleDateFormat = new SimpleDateFormat(dateFormat);
-			formatMap.put(dateFormat, simpleDateFormat);
+			synchronized (formatMap) {
+				simpleDateFormat = new SimpleDateFormat(dateFormat);
+				formatMap.put(dateFormat, simpleDateFormat);				
+			}
 		}
 		return simpleDateFormat;
 	}
