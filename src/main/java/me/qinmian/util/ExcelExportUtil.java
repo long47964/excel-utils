@@ -229,7 +229,10 @@ public class ExcelExportUtil {
 						exportInfo,dataCellStyleMap,availableFields, sheet);
 			} catch (Exception e) {
 				throw new RuntimeException(e);
-			}	
+			}finally {
+				//释放dateformate
+				DateFormatHolder.remove();
+			}
 			setColumWidth(type, exportInfo,availableFields, sheet);			
 			usedListNum += dataSize;
 		}
@@ -467,7 +470,7 @@ public class ExcelExportUtil {
 		return count;
 	}
 
-	/** 给cell设置值ֵ
+	/** 给cell设置值
 	 * @param cell
 	 * @param returnVal
 	 */

@@ -128,49 +128,58 @@ public  class ExcelImportUtil {
 		int suceess = 0 ; 
 		int fail = 0;
 		List<Integer> errorRows = new ArrayList<Integer>();
-		for(int sheetIndex = 0 ; sheetIndex < sheetNum ; sheetIndex++){
-			sheet = workbook.getSheetAt(sheetIndex);
-			rowCount = sheet.getPhysicalNumberOfRows();
-			rowLoop:
-				for(int i = dataRow ; i < rowCount ; i++){
-					row = sheet.getRow(i);
-					cellCount = row.getPhysicalNumberOfCells();
-					T obj = clazz.newInstance();
-					try {
-						for(int j = 0 ; j < cellCount ; j++){					
-							ImportFieldInfo fieldInfo = fieldInfoMap.get(headNameList.get(j));
-							if(fieldInfo == null ){
-								continue;
-							}
-							cell = row.getCell(j);
-							if(cell != null){
-								Object value = getValue(fieldInfo, cell);
-								
-								if(String.class.equals(fieldInfo.getTypeChain().get(fieldInfo.getTypeChain().size() - 1)) 
-										&& StringUtils.isEmpty(value)){
-									value = null;
+		try {
+			for(int sheetIndex = 0 ; sheetIndex < sheetNum ; sheetIndex++){
+				sheet = workbook.getSheetAt(sheetIndex);
+				rowCount = sheet.getPhysicalNumberOfRows();
+				rowLoop:
+					for(int i = dataRow ; i < rowCount ; i++){
+						row = sheet.getRow(i);
+						cellCount = row.getPhysicalNumberOfCells();
+						T obj = clazz.newInstance();
+						try {
+							for(int j = 0 ; j < cellCount ; j++){					
+								ImportFieldInfo fieldInfo = fieldInfoMap.get(headNameList.get(j));
+								if(fieldInfo == null ){
+									continue;
 								}
-								if(value == null && fieldInfo.isRequired()){
-									fail++;
-									errorRows.add(i+1);
-									continue rowLoop;
+								cell = row.getCell(j);
+								if(cell != null){
+									Object value = getValue(fieldInfo, cell);
+									
+									if(String.class.equals(fieldInfo.getTypeChain().get(fieldInfo.getTypeChain().size() - 1)) 
+											&& StringUtils.isEmpty(value)){
+										value = null;
+									}
+									if(value == null && fieldInfo.isRequired()){
+										fail++;
+										errorRows.add(i+1);
+										continue rowLoop;
+									}
+									invoke(obj,fieldInfo,value);
 								}
-								invoke(obj,fieldInfo,value);
+							} 
+							suceess++;
+							dataMap.put(i+1, obj);
+						}catch (Exception e) {
+							fail++;
+							errorRows.add(i+1);
+							e.printStackTrace();
+							if(LOG.isErrorEnabled()){
+								LOG.error("第"+(i+1) + "行报错",e);
 							}
-						} 
-						suceess++;
-						dataMap.put(i+1, obj);
-					}catch (Exception e) {
-						fail++;
-						errorRows.add(i+1);
-						e.printStackTrace();
-						if(LOG.isErrorEnabled()){
-							LOG.error("第"+(i+1) + "行报错",e);
 						}
-					}
-				}			
+					}			
+			}
+			//释放dateformat
+			return new ImportResult<T>(suceess, fail, dataMap.isEmpty() ? null : dataMap, errorRows.isEmpty() ? null : errorRows);
+		} catch (Exception e) {
+			LOG.error("转换出错" ,e);
+			throw new RuntimeException(e);
+		}finally {
+			//释放dateformate
+			DateFormatHolder.remove();
 		}
-		return new ImportResult<T>(suceess, fail, dataMap.isEmpty() ? null : dataMap, errorRows.isEmpty() ? null : errorRows);
 	}
 	
 	/** 根据获取的的数据执行set方法
