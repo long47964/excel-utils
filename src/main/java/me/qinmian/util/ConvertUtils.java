@@ -3,8 +3,6 @@ package me.qinmian.util;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.springframework.util.NumberUtils;
 
@@ -12,12 +10,6 @@ public class ConvertUtils {
 
 	private final static String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
 	
-	private  static Map<String,SimpleDateFormat> formatMap ;
-	
-	static{
-		formatMap = new HashMap<String, SimpleDateFormat>();
-		formatMap.put(DEFAULT_DATE_FORMAT, new SimpleDateFormat(DEFAULT_DATE_FORMAT));
-	}
 	
 	@SuppressWarnings("unchecked")
 	public static Object convertIfNeccesary(Object obj, Class<?> type,String dateFormat) throws ParseException {
@@ -62,16 +54,11 @@ public class ConvertUtils {
 	
 	private static SimpleDateFormat getDateFormat(String dateFormat) {
 		
-		if(DEFAULT_DATE_FORMAT.equals(dateFormat) || dateFormat == null){
-			return formatMap.get(DEFAULT_DATE_FORMAT);
+		SimpleDateFormat format = DateFormatHolder.get();
+		if(format == null ) {
+			format = new SimpleDateFormat(dateFormat == null ? DEFAULT_DATE_FORMAT : dateFormat);
+			DateFormatHolder.put(format);
 		}
-		SimpleDateFormat simpleDateFormat = formatMap.get(dateFormat);
-		if(simpleDateFormat == null){
-			synchronized (formatMap) {
-				simpleDateFormat = new SimpleDateFormat(dateFormat);
-				formatMap.put(dateFormat, simpleDateFormat);				
-			}
-		}
-		return simpleDateFormat;
+		return format;
 	}
 }
