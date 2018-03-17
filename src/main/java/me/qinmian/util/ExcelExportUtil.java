@@ -208,35 +208,35 @@ public class ExcelExportUtil {
 		}else{
 			page = (list.size()  - (maxSheetSize - usedRows) + 1)/maxSheetSize + 2 + i;
 		}
-		
 		int usedListNum = 0;
-		for( ; i < page ; i++  ){
-			int startRow = dataRowNum > usedRows ? dataRowNum : usedRows;
-			int dataSize = maxSheetSize - startRow;
-			if(startSheetNum > 0){
-				sheet = workbook.getSheetAt(i);
-				startSheetNum = 0;
-				usedRows = 0 ;
-			}else{
-				sheet = workbook.createSheet(exportInfo.getSheetName() + (i+1) );
-				//创建静态行
-				setStaticRows(exportInfo, staticRowData, workbook, sheet , availableFields.size());
-				//创建表头
-				createSheetHeadRow(exportInfo, headCellStyleMap, sheet);
+		try {
+			for( ; i < page ; i++  ){
+				int startRow = dataRowNum > usedRows ? dataRowNum : usedRows;
+				int dataSize = maxSheetSize - startRow;
+				if(startSheetNum > 0){
+					sheet = workbook.getSheetAt(i);
+					startSheetNum = 0;
+					usedRows = 0 ;
+				}else{
+					sheet = workbook.createSheet(exportInfo.getSheetName() + (i+1) );
+					//创建静态行
+					setStaticRows(exportInfo, staticRowData, workbook, sheet , availableFields.size());
+					//创建表头
+					createSheetHeadRow(exportInfo, headCellStyleMap, sheet);
+				}
+				
+					createSheetDataRow(list, startRow, usedListNum , usedListNum + dataSize ,
+							exportInfo,dataCellStyleMap,availableFields, sheet);
+				
+				setColumWidth(type, exportInfo,availableFields, sheet);			
+				usedListNum += dataSize;
 			}
-			try {
-				createSheetDataRow(list, startRow, usedListNum , usedListNum + dataSize ,
-						exportInfo,dataCellStyleMap,availableFields, sheet);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}finally {
-				//释放dateformate
-				DateFormatHolder.remove();
-			}
-			setColumWidth(type, exportInfo,availableFields, sheet);			
-			usedListNum += dataSize;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}finally {
+			//释放dateformate
+			DateFormatHolder.remove();
 		}
-		
 		return workbook;
 	}
 	
