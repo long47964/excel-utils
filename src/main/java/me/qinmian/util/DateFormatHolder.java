@@ -1,17 +1,22 @@
 package me.qinmian.util;
 
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DateFormatHolder {
 
-	private static ThreadLocal<SimpleDateFormat> holder = new ThreadLocal<SimpleDateFormat>();
+	private final static ThreadLocal<Map<String,SimpleDateFormat>> holder = new ThreadLocal<Map<String,SimpleDateFormat>>();
 	
-	public static void put(SimpleDateFormat format) {
-		holder.set(format);
+	public static void put(String formatStr ,SimpleDateFormat format) {
+		if(holder.get() == null) {
+			holder.set(new HashMap<String,SimpleDateFormat>());
+		}
+		holder.get().put(formatStr, format);
 	}
 	
-	public static SimpleDateFormat get() {
-		return holder.get();
+	public static SimpleDateFormat get(String formatStr) {
+		return holder.get() == null ? null : holder.get().get(formatStr);
 	}
 	
 	public static void remove() {

@@ -4,6 +4,7 @@ import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -116,7 +117,9 @@ public class ExcelUtils {
 			throws IntrospectionException {
 		for(int i = 0 ; i < fieldList.size() ; i++){
 			Field field = fieldList.get(i);
-			if(field.isAnnotationPresent(IgnoreField.class)){
+			if(field.isAnnotationPresent(IgnoreField.class)||
+					Modifier.isStatic(field.getModifiers())){
+				//如果是被设置或者是static字段，忽略
 				continue;
 			}
 			List<Method> methodChain = new ArrayList<Method>(1);

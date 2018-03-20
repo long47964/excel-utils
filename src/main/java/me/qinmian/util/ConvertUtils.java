@@ -53,11 +53,11 @@ public class ConvertUtils {
 
 	
 	private static SimpleDateFormat getDateFormat(String dateFormat) {
-		
-		SimpleDateFormat format = DateFormatHolder.get();
+		dateFormat = dateFormat != null ? dateFormat : DEFAULT_DATE_FORMAT;
+		SimpleDateFormat format = DateFormatHolder.get(dateFormat);
 		if(format == null ) {
-			format = new SimpleDateFormat(dateFormat == null ? DEFAULT_DATE_FORMAT : dateFormat);
-			DateFormatHolder.put(format);
+			format = new SimpleDateFormat(dateFormat);
+			DateFormatHolder.put(dateFormat ,format);
 		}
 		return format;
 	}
